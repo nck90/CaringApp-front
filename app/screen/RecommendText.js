@@ -2,10 +2,12 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Dimensions,
+  Keyboard,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 
@@ -16,41 +18,46 @@ export default function RecommendText() {
   const [text, setText] = useState("");
 
   return (
-    <View style={styles.container}>
-      {/* 상단 텍스트 */}
-      <View style={styles.header}>
-        <Text style={styles.title}>어르신은 어떤 분이신가요?</Text>
-        <Text style={styles.subtitle}>어르신에게 맞는 기관을 추천하기 위해</Text>
-        <Text style={styles.subtitle}>
-          어르신의 성격, 행동 패턴 등을 입력해주세요
-        </Text>
-      </View>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        {/* 상단 + 입력 영역 */}
+        <View style={styles.content}>
+          {/* 상단 텍스트 */}
+          <View style={styles.header}>
+            <Text style={styles.title}>어르신은 어떤 분이신가요?</Text>
+            <Text style={styles.subtitle}>어르신에게 맞는 기관을 추천하기 위해</Text>
+            <Text style={styles.subtitle}>
+              어르신의 성격, 행동 패턴 등을 입력해주세요
+            </Text>
+          </View>
 
-      {/* 중앙 텍스트 입력 박스 */}
-      <View style={styles.inputBox}>
-        <TextInput
-          style={styles.textInput}
-          multiline
-          value={text}
-          onChangeText={setText}
-          placeholder={`예)\n어머니가 사람 많은 곳을 힘들어하세요.\n활동적인 프로그램을 선호하세요.`}
-          placeholderTextColor="#A0AEC0"
-          textAlignVertical="top"
-          underlineColorAndroid="transparent" // Android 밑줄 제거
-        />
-      </View>
+          {/* 중앙 텍스트 입력 박스 */}
+          <View style={styles.inputBox}>
+            <TextInput
+              style={styles.textInput}
+              multiline
+              value={text}
+              onChangeText={setText}
+              placeholder={`예)\n어머니가 사람 많은 곳을 힘들어하세요.\n활동적인 프로그램을 선호하세요.`}
+              placeholderTextColor="#A0AEC0"
+              textAlignVertical="top"
+              underlineColorAndroid="transparent"
+            />
+          </View>
+        </View>
 
-      {/* 하단 버튼 — RecommendClear.js와 위치 동일 */}
-      <View style={styles.bottomBox}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.push("/screen/RecommendStart")}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonText}>기관 추천받기</Text>
-        </TouchableOpacity>
+        {/* 🔥 RecommendClear와 동일한 하단바 위치 (화면 맨 아래) */}
+        <View style={styles.bottomBox}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => router.push("/screen/RecommendStart")}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.buttonText}>기관 추천받기</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -62,6 +69,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F2F7FB",
+  },
+
+  // 상단 + 입력 영역
+  content: {
+    flex: 1,
   },
 
   header: {
@@ -98,7 +110,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 4,
 
-    borderWidth: 0,     // 🔥 포커스 시 테두리 제거
+    borderWidth: 0,
     outlineStyle: "none",
   },
 
@@ -108,7 +120,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
 
-    borderWidth: 0,     // 🔥 포커스 시 검정 테두리 완전 제거
+    borderWidth: 0,
     outlineStyle: "none",
   },
 
