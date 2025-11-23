@@ -11,11 +11,11 @@ import {
   View,
 } from "react-native";
 
-import BottomTabBar from "../../components/BottomTabBar"; // ⭐ 추가 (경로는 너 프로젝트 기준)
+import BottomTabBar from "../../components/BottomTabBar";
 
 const { width, height } = Dimensions.get("window");
 
-const CARD_HEIGHT = height / 1.4;
+const CARD_HEIGHT = height / 1.3;
 const CARD_WIDTH = width * 0.7;
 const CARD_SPACING = CARD_WIDTH / 100;
 
@@ -26,6 +26,17 @@ export default function Recommend() {
   const scrollRef = useRef(null);
 
   useEffect(() => {
+    const images = [
+      require("../../assets/images/price.png"),
+      require("../../assets/images/institution.png"),
+      require("../../assets/images/distance.png"),
+    ];
+
+    images.forEach((img) => {
+      const uri = Image.resolveAssetSource(img).uri;
+      Image.prefetch(uri);
+    });
+
     if (scrollRef.current) {
       const initialOffset =
         H_PADDING + (CARD_WIDTH + CARD_SPACING) - (width - CARD_WIDTH) / 2;
@@ -39,8 +50,6 @@ export default function Recommend() {
 
   return (
     <LinearGradient colors={["#FFFFFF", "#D7EEFF"]} style={styles.container}>
-
-      {/* 상단 문구 */}
       <View style={styles.header}>
         <Text style={styles.title}>
           더 나은 선택을 위해{"\n"}기관을 추천해드릴게요
@@ -50,47 +59,47 @@ export default function Recommend() {
         </Text>
       </View>
 
-      {/* 카드 스크롤 */}
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        snapToInterval={CARD_WIDTH + CARD_SPACING}
-        decelerationRate="fast"
-        alwaysBounceVertical={false}
-        alwaysBounceHorizontal={false}
-        bounces={false}
-        directionalLockEnabled={true}
-        scrollEnabled={true}
-        nestedScrollEnabled={false}
-        contentContainerStyle={styles.scrollArea}
-      >
-        <TouchableOpacity style={styles.card}>
-          <Image
-            source={require("../../assets/images/price.png")}
-            style={styles.cardImage}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
+      <View style={styles.cardWrapper}>
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={CARD_WIDTH + CARD_SPACING}
+          decelerationRate="fast"
+          bounces={false}
+          alwaysBounceVertical={false}
+          alwaysBounceHorizontal={false}
+          directionalLockEnabled={true}
+          contentContainerStyle={styles.scrollArea}
+        >
+          <TouchableOpacity style={styles.card}>
+            <Image
+              source={require("../../assets/images/price.png")}
+              style={styles.cardImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.card}>
-          <Image
-            source={require("../../assets/images/institution.png")}
-            style={styles.cardImage}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.card}>
+            <Image
+              source={require("../../assets/images/institution.png")}
+              style={styles.cardImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.card}>
-          <Image
-            source={require("../../assets/images/distance.png")}
-            style={styles.cardImage}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-      </ScrollView>
+          <TouchableOpacity style={styles.card}>
+            <Image
+              source={require("../../assets/images/distance.png")}
+              style={styles.cardImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
 
-      {/* 시작하기 버튼 */}
+      <View style={styles.buttonSpacer} />
+
       <TouchableOpacity
         style={styles.startButton}
         onPress={() => router.push("/screen/RecommendText")}
@@ -98,9 +107,7 @@ export default function Recommend() {
         <Text style={styles.startButtonText}>시작하기</Text>
       </TouchableOpacity>
 
-      {/* ⭐ 새로운 하단바 (recommend 활성화) */}
       <BottomTabBar activeKey="recommend" />
-
     </LinearGradient>
   );
 }
@@ -135,10 +142,16 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
+  cardWrapper: {
+    height: CARD_HEIGHT,
+    overflow: "hidden",
+    marginTop: -150,
+  },
+
   scrollArea: {
     paddingHorizontal: H_PADDING,
-    marginBottom: 40,
-    marginTop: -60,
+    height: CARD_HEIGHT,
+    alignItems: "center",
   },
 
   card: {
@@ -154,6 +167,10 @@ const styles = StyleSheet.create({
     height: "100%",
   },
 
+  buttonSpacer: {
+    height: 0,
+  },
+
   startButton: {
     backgroundColor: "#5DA7DB",
     width: "85%",
@@ -162,6 +179,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     justifyContent: "center",
     alignItems: "center",
+    marginTop: -120,
     marginBottom: 150,
   },
 

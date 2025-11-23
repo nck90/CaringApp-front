@@ -16,19 +16,16 @@ export default function RecommendStart() {
   const radius = (circleSize - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
-  // 🔵 원형 채워지기 애니메이션
   useEffect(() => {
     Animated.timing(progress, {
-      toValue: 1,        // 전체 원을 채움
-      duration: 3000,    // 🔥 로딩 6초
+      toValue: 1,       
+      duration: 3000,    
       useNativeDriver: true,
     }).start(() => {
-      // 🔥 6초 완료 → 다음 페이지로 이동
       router.push("/screen/RecommendClear");
     });
   }, []);
 
-  // 🔵 체크박스 순서 진행
   useEffect(() => {
     setTimeout(() => setStep(1), 750);
     setTimeout(() => setStep(2), 1500);
@@ -43,9 +40,7 @@ export default function RecommendStart() {
   return (
     <View style={styles.container}>
       
-      {/* 🔥 채워지는 원형 Progress Circle */}
       <Svg width={circleSize} height={circleSize}>
-        {/* 배경 원 */}
         <Circle
           cx={circleSize / 2}
           cy={circleSize / 2}
@@ -55,7 +50,6 @@ export default function RecommendStart() {
           fill="none"
         />
 
-        {/* 진행 원 */}
         <AnimatedCircle
           cx={circleSize / 2}
           cy={circleSize / 2}
@@ -74,7 +68,6 @@ export default function RecommendStart() {
       <Text style={styles.title}>잠시만 기다려주세요</Text>
       <Text style={styles.subtitle}>모두에게 만족스러운 기관을 찾고 있어요!</Text>
 
-      {/* 체크 1 */}
       <View style={styles.box}>
         <Ionicons
           name={step >= 1 ? "checkmark-circle" : "radio-button-on"}
@@ -84,7 +77,6 @@ export default function RecommendStart() {
         <Text style={styles.boxText}>위치 기반 분석</Text>
       </View>
 
-      {/* 체크 2 */}
       <View style={styles.box}>
         <Ionicons
           name={step >= 2 ? "checkmark-circle" : "radio-button-on"}
@@ -94,7 +86,6 @@ export default function RecommendStart() {
         <Text style={styles.boxText}>가격 분석</Text>
       </View>
 
-      {/* 체크 3 */}
       <View style={styles.box}>
         <Ionicons
           name={step >= 3 ? "checkmark-circle" : "radio-button-on"}

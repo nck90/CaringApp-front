@@ -76,7 +76,6 @@ export default function RecommendClear() {
 
   return (
     <View style={styles.container}>
-      {/* 상단 텍스트 */}
       <View style={styles.header}>
         <Text style={styles.title}>기관 추천이 완료됐어요!</Text>
         <Text style={styles.subtitle}>
@@ -84,7 +83,6 @@ export default function RecommendClear() {
         </Text>
       </View>
 
-      {/* 카드 스크롤 */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -124,7 +122,6 @@ export default function RecommendClear() {
         ))}
       </ScrollView>
 
-      {/* 🔥 기관 추천 이유 박스 추가 */}
       <View style={styles.reasonBox}>
         <Text style={styles.reasonTitle}>기관 추천 이유</Text>
         <Text style={styles.reasonText}>
@@ -134,7 +131,6 @@ export default function RecommendClear() {
         </Text>
       </View>
 
-      {/* 하단 버튼 */}
       <View style={styles.bottomBox}>
         <TouchableOpacity
           style={styles.button}
@@ -148,9 +144,6 @@ export default function RecommendClear() {
   );
 }
 
-/* ------------------------------- */
-/* 스타일 */
-/* ------------------------------- */
 
 const CARD_WIDTH = width * 0.75;
 const CARD_HEIGHT = 330;
@@ -252,7 +245,6 @@ const styles = StyleSheet.create({
     color: "#162B40",
   },
 
-  /* 🔥 기관 추천 이유 박스 스타일 */
   reasonBox: {
     width: width * 0.88,
     backgroundColor: "#FFFFFF",

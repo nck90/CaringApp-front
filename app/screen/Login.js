@@ -21,7 +21,6 @@ export default function Login() {
   const [focusedField, setFocusedField] = useState("");
   const router = useRouter();
 
-  // 🔥 이미지 미리 로딩 (로고 + SNS 이미지)
   const [loaded] = useAssets([
     require("../../assets/images/logo.png"),
     require("../../assets/images/naver.png"),
@@ -29,20 +28,18 @@ export default function Login() {
     require("../../assets/images/kakao.png"),
   ]);
 
-  // 로딩 끝날 때까지 화면 렌더 안함 → 이미지 깜빡임 / 딜레이 제거
   if (!loaded) return null;
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
-        {/* 로고 */}
+
         <Image
           source={require("../../assets/images/logo.png")}
           style={styles.logo}
           resizeMode="contain"
         />
 
-        {/* 입력 필드 */}
         <View style={styles.inputContainer}>
           <TextInput
             style={[
@@ -76,7 +73,6 @@ export default function Login() {
           />
         </View>
 
-        {/* 링크 */}
         <View style={styles.linkRow}>
           <TouchableOpacity onPress={() => router.push("/screen/SelfIdentification")}>
             <Text style={styles.linkText}>회원가입</Text>
@@ -87,7 +83,6 @@ export default function Login() {
           </TouchableOpacity>
         </View>
 
-        {/* 로그인 버튼 */}
         <TouchableOpacity
           style={[
             styles.loginButton,
@@ -98,7 +93,6 @@ export default function Login() {
           <Text style={styles.loginButtonText}>로그인</Text>
         </TouchableOpacity>
 
-        {/* SNS 로그인 */}
         <Text style={styles.snsTitle}>SNS 계정으로 로그인</Text>
         <View style={styles.snsRow}>
           <TouchableOpacity style={[styles.snsCircle, styles.naver]}>

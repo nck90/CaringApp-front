@@ -28,9 +28,9 @@ export default function PreferredInstitution() {
   const [selectedServices, setSelectedServices] = useState([]);
 
   const TAG_MAP = {
-    "데이케어센터": 16,       // DAYCARE
-    "요양원": 18,              // LONGTERM
-    "재가 돌봄 서비스": 22,   // HOME_CARE
+    "데이케어센터": 16,      
+    "요양원": 18,             
+    "재가 돌봄 서비스": 22,  
   };
 
   const SERVICES = [

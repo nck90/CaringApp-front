@@ -63,14 +63,12 @@ export default function ReservationClear() {
             예약이 완료되었습니다{"\n"}방문일자에 맞춰 방문해주세요!
           </Text>
 
-          {/* 회색 박스 */}
           <View style={[styles.infoBox, { marginTop: 100 }]}>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>기관</Text>
               <Text style={styles.infoValue}>{name || "기관명"}</Text>
             </View>
 
-            {/* 마지막 줄 아래 여백 조정 */}
             <View style={[styles.infoRow, { marginBottom: 0 }]}>
               <Text style={styles.infoLabel}>방문일자</Text>
               <Text style={styles.infoValue}>
@@ -127,23 +125,21 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
 
-  /* 🔹 박스 안 텍스트가 위아래 중앙처럼 균형 잡히도록 패딩 조정 */
   infoBox: {
     width: "90%",
     backgroundColor: "#F5F9FC",
     borderRadius: 12,
-    paddingVertical: 16,    // 🔥 위/아래 균형 있게 증가
+    paddingVertical: 16,   
     paddingHorizontal: 18,
     elevation: 2,
     zIndex: 20,
   },
 
-  /* 🔹 내부 줄 간격 통일 (위아래 동일해 보이게) */
   infoRow: {
     flexDirection: "row",
     justifyContent: "flex-start",
     alignItems: "center",
-    marginBottom: 12,     // 🔥 여백을 조금 늘려 균형있게
+    marginBottom: 12,   
   },
 
   infoLabel: {

@@ -213,14 +213,16 @@ export default function Institution() {
           <View style={styles.actionRow}>
             <TouchableOpacity
               style={styles.actionLeft}
-              onPress={() => router.push("/screen/counsel")}
+              onPress={() => router.push("/screen/CounselChat")}
             >
               <Text style={styles.actionLeftText}>상담하기</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.actionRight}
-              onPress={() => router.push("/screen/reservation")}
+              onPress={() =>
+                router.push(`/screen/CounselChat?name=${encodeURIComponent(data.name)}`)}
+              
             >
               <Text style={styles.actionRightText}>예약하기</Text>
             </TouchableOpacity>

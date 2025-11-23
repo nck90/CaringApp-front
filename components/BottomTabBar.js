@@ -39,9 +39,9 @@ export default function BottomTabBar({ activeKey }) {
       case "search":
         return tabWidth * 1.625;   // 2번 탭
       case "home":
-        return tabWidth * 2.56;   // 3번 탭
-      case "consult":
-        return tabWidth * 3.625;   // 4번 탭
+        return tabWidth * 2.55;   // 3번 탭
+      case "counsel":
+        return tabWidth * 3.4;   // 4번 탭
       case "mypage":
         return tabWidth * 4.625;   // 5번 탭
       default:
@@ -144,16 +144,16 @@ export default function BottomTabBar({ activeKey }) {
 
 
         {/* 4. 상담 */}
-        <TouchableOpacity style={styles.tabBtn} onPress={() => go("/screen/Consult")}>
-          {activeKey === "consult"
+        <TouchableOpacity style={styles.tabBtn} onPress={() => go("/screen/Counsel")}>
+          {activeKey === "counsel"
             ? renderCircularIcon("people")
             : <Ionicons name="people-outline" size={30} color={INACTIVE} />
           }
 
           <Text style={[
             styles.label,
-            activeKey === "consult" && styles.activeLabel,
-            activeKey === "consult" && { marginTop: 38 }
+            activeKey === "counsel" && styles.activeLabel,
+            activeKey === "counsel" && { marginTop: 38 }
           ]}>
             상담
           </Text>

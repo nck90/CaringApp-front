@@ -82,7 +82,7 @@ export default function IdentificationNumber() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.container}>
-        {/* 뒤로가기 */}
+
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.push("/screen/SelfIdentification")}
@@ -90,7 +90,6 @@ export default function IdentificationNumber() {
           <Ionicons name="chevron-back" size={28} color="#162B40" />
         </TouchableOpacity>
 
-        {/* 안내문 */}
         <View style={styles.header}>
           <Text style={styles.title}>인증번호 입력</Text>
           <Text style={styles.subtitle}>
@@ -98,7 +97,6 @@ export default function IdentificationNumber() {
           </Text>
         </View>
 
-        {/* 입력 필드 */}
         <View style={styles.form}>
           <LabeledInput
             label="인증번호"
@@ -115,7 +113,6 @@ export default function IdentificationNumber() {
           />
         </View>
 
-        {/* 확인 버튼 */}
         <TouchableOpacity
           style={[
             styles.button,
@@ -172,9 +169,6 @@ function LabeledInput({
   );
 }
 
-/* --------------------------- */
-/* 스타일 */
-/* --------------------------- */
 const styles = StyleSheet.create({
   container: {
     flex: 1,

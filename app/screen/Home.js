@@ -10,14 +10,13 @@ import {
   View,
 } from "react-native";
 
-import BottomTabBar from "../../components/BottomTabBar"; // ⭐ 추가
+import BottomTabBar from "../../components/BottomTabBar";
 
 const { width } = Dimensions.get("window");
 
 export default function Home() {
   const router = useRouter();
 
-  // 🔥 모든 이미지 미리 로딩
   const [loaded] = useAssets([
     require("../../assets/images/logo.png"),
     require("../../assets/images/icons/bell.png"),
@@ -34,9 +33,6 @@ export default function Home() {
   return (
     <View style={styles.container}>
 
-      {/* --------------------------- */}
-      {/* 상단 로고 + 벨 */}
-      {/* --------------------------- */}
       <View style={styles.topRow}>
         <View style={styles.logoBox}>
           <Image
@@ -46,7 +42,7 @@ export default function Home() {
           />
         </View>
 
-        <TouchableOpacity onPress={() => router.push("/screen/bell")}>
+        <TouchableOpacity onPress={() => router.push("/screen/Bell")}>
           <Image
             source={require("../../assets/images/icons/bell.png")}
             style={styles.bell}
@@ -55,12 +51,8 @@ export default function Home() {
         </TouchableOpacity>
       </View>
 
-      {/* 광고 */}
       <View style={styles.bannerBox} />
 
-      {/* --------------------------- */}
-      {/* 고정 콘텐츠 */}
-      {/* --------------------------- */}
       <View style={styles.fixedContent}>
         <View style={styles.greetingBox}>
           <Text style={styles.greeting1}>안녕하세요!</Text>
@@ -69,7 +61,6 @@ export default function Home() {
           </Text>
         </View>
 
-        {/* 파란 박스 */}
         <TouchableOpacity
           onPress={() => router.push("/screen/Search")}
           style={styles.cardWrapperBlueGreen}
@@ -81,9 +72,8 @@ export default function Home() {
           />
         </TouchableOpacity>
 
-        {/* 초록 박스 */}
         <TouchableOpacity
-          onPress={() => router.push("/screen/reservation")}
+          onPress={() => router.push("/screen/Counsel")}
           style={styles.cardWrapperBlueGreen}
         >
           <Image
@@ -93,9 +83,8 @@ export default function Home() {
           />
         </TouchableOpacity>
 
-        {/* 하얀 박스 */}
         <TouchableOpacity
-          onPress={() => router.push("/screen/use")}
+          onPress={() => router.push("/screen/Use")}
           style={styles.cardWrapperWhite}
         >
           <Image
@@ -105,10 +94,6 @@ export default function Home() {
           />
         </TouchableOpacity>
       </View>
-
-      {/* --------------------------- */}
-      {/* ⭐ 하단 네비바 (커스텀 둥근 탭바) */}
-      {/* --------------------------- */}
       <BottomTabBar activeKey="home" />
 
     </View>
@@ -121,8 +106,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7F9FC",
     paddingTop: 60,
   },
-
-  /* 상단 */
+  
   topRow: {
     flexDirection: "row",
     justifyContent: "space-between",

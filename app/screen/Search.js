@@ -377,9 +377,29 @@ export default function Search() {
             />
           </View>
 
-          <TouchableOpacity style={styles.applyButton}>
-            <Text style={styles.applyText}>적용하기</Text>
-          </TouchableOpacity>
+          <TouchableOpacity
+  style={styles.applyButton}
+  onPress={() => {
+    const params = {
+      type: selectedType || "",
+      locationType: selectedLocation || "",
+      sido: selectedSido || "",
+      gugun: selectedGugun || "",
+      dong: selectedDong || "",
+      distance: nearbyDistance,
+      price: price,
+      available: isAvailable ? "true" : "false",
+    };
+
+    router.push({
+      pathname: "/screen/InstitutionResult",
+      params,
+    });
+  }}
+>
+  <Text style={styles.applyText}>적용하기</Text>
+</TouchableOpacity>
+
         </View>
 
         <View style={styles.bottomWhiteFix} />
@@ -839,7 +859,7 @@ const styles = StyleSheet.create({
   },
 
   noRecent: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#9EA6AF",
     paddingVertical: 20,
   },

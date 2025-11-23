@@ -20,9 +20,7 @@ export default function RecommendText() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
-        {/* 상단 + 입력 영역 */}
         <View style={styles.content}>
-          {/* 상단 텍스트 */}
           <View style={styles.header}>
             <Text style={styles.title}>어르신은 어떤 분이신가요?</Text>
             <Text style={styles.subtitle}>어르신에게 맞는 기관을 추천하기 위해</Text>
@@ -31,7 +29,6 @@ export default function RecommendText() {
             </Text>
           </View>
 
-          {/* 중앙 텍스트 입력 박스 */}
           <View style={styles.inputBox}>
             <TextInput
               style={styles.textInput}
@@ -46,7 +43,6 @@ export default function RecommendText() {
           </View>
         </View>
 
-        {/* 🔥 RecommendClear와 동일한 하단바 위치 (화면 맨 아래) */}
         <View style={styles.bottomBox}>
           <TouchableOpacity
             style={styles.button}
@@ -61,9 +57,6 @@ export default function RecommendText() {
   );
 }
 
-/* ------------------------------- */
-/* 스타일 */
-/* ------------------------------- */
 
 const styles = StyleSheet.create({
   container: {
@@ -71,7 +64,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F2F7FB",
   },
 
-  // 상단 + 입력 영역
   content: {
     flex: 1,
   },
@@ -95,7 +87,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  /* 텍스트 입력 박스 */
   inputBox: {
     width: width * 0.88,
     height: 260,
@@ -124,7 +115,6 @@ const styles = StyleSheet.create({
     outlineStyle: "none",
   },
 
-  /* 하단 박스 — RecommendClear.js와 동일 */
   bottomBox: {
     alignItems: "center",
     paddingBottom: 40,

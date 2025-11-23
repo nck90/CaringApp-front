@@ -60,10 +60,9 @@ export default function GuardianInfo() {
       return;
     }
 
-    // 🔥 API 호출 없이 SignupContext에만 저장
     updateSignup({
-      gender: form.gender,        // "남성" or "여성"
-      address: form.address,      // 전체 주소 문자열
+      gender: form.gender,      
+      address: form.address,     
     });
 
     router.push({

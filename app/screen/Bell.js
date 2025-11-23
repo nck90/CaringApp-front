@@ -2,12 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function Bell() {
@@ -20,30 +20,22 @@ export default function Bell() {
       { id: 1, message: "알림" },
       { id: 2, message: "API 연결해두기" },
     ];
-
     setNotifications(mockData);
   }, []);
 
   return (
     <View style={styles.container}>
 
-      {/* ----------------------------------- */}
-      {/*   ⬅ + 알림   (IDPW와 동일 위치)    */}
-      {/* ----------------------------------- */}
-      <View style={styles.topRow}>
+      <View style={styles.headerRow}>
         <TouchableOpacity
-          style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="chevron-back" size={28} color="#162B40" />
+          <Ionicons name="chevron-back" size={26} color="#162B40" />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>알림</Text>
       </View>
 
-      {/* ----------------------------------- */}
-      {/*  알림 내역  → 큰 타이틀 위치로 이동   */}
-      {/* ----------------------------------- */}
       <Text style={styles.sectionTitle}>알림 내역</Text>
 
       <ScrollView
@@ -74,29 +66,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7F9FB",
   },
 
-  /* ----------------------------------- */
-  /*   ⬅ + 알림  (IDPW 스타일 반영)      */
-  /* ----------------------------------- */
-  topRow: {
+  headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 50,
-    marginLeft: 25,
-  },
-
-  backButton: {
-    marginRight: 5,
+    marginTop: 60,
+    marginLeft: 10,
   },
 
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
+    fontSize: 22,
+    fontWeight: "700",
     color: "#162B40",
+    marginLeft: 5,
   },
 
-  /* ----------------------------------- */
-  /*   알림 내역 → 큰 제목처럼 옮김       */
-  /* ----------------------------------- */
   sectionTitle: {
     fontSize: 22,
     fontWeight: "700",
