@@ -11,6 +11,8 @@ import {
     View,
 } from "react-native";
 
+import BottomTabBar from "../../components/BottomTabBar"; // 🔥 하단바 추가
+
 const { width } = Dimensions.get("window");
 
 export default function Institution() {
@@ -224,14 +226,12 @@ export default function Institution() {
             </TouchableOpacity>
           </View>
 
-          <View style={{ height: 100 }} />
+          <View style={{ height: 120 }} />
         </View>
       </ScrollView>
 
-      <Image
-        source={require("../../assets/images/bottomsearch.png")}
-        style={styles.bottomTab}
-      />
+      {/* 🔥🔥🔥 기존 이미지 삭제 → 커스텀 하단바 삽입*/}
+      <BottomTabBar activeKey="search" />
     </View>
   );
 }
@@ -454,13 +454,5 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
   },
-
-  bottomTab: {
-    width: "100%",
-    height: undefined,
-    aspectRatio: 604 / 153,
-    position: "absolute",
-    bottom: 5,
-    resizeMode: "contain",
-  },
 });
+

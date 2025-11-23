@@ -5,7 +5,6 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
-  Image,
   Keyboard,
   PanResponder,
   StyleSheet,
@@ -18,6 +17,7 @@ import {
 } from "react-native";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import BottomTabBar from "../../components/BottomTabBar"; // ⭐ 추가
 
 const { width } = Dimensions.get("window");
 
@@ -164,14 +164,13 @@ export default function Search() {
 
     const keyword = searchText.trim();
 
-    // ⭐ 최근 검색어 최대 10개까지 저장
     const updated = [
       keyword,
       ...recentKeywords.filter((item) => item !== keyword),
     ].slice(0, 10);
 
     setRecentKeywords(updated);
-    saveRecentKeywords(updated); // ⭐ 영구 저장
+    saveRecentKeywords(updated);
 
     setSearchPopupVisible(false);
     Keyboard.dismiss();
@@ -203,7 +202,7 @@ export default function Search() {
           </View>
         </TouchableOpacity>
 
-        {/* === 기존 필터 UI 전부 유지 === */}
+        {/* === 기존 필터 UI 모두 동일 === */}
 
         <View style={styles.filterBox}>
           <Text style={styles.filterTitle}>맞춤형 필터</Text>
@@ -262,8 +261,6 @@ export default function Search() {
             </TouchableOpacity>
           </View>
 
-          {/* 나머지 UI 동일 — 기능 삭제 ❌ 변경 ❌ */}
-
           {selectedLocation === "nearby" && (
             <View style={styles.nearbyArea}>
               <View style={styles.nearbyLabelRow}>
@@ -286,7 +283,10 @@ export default function Search() {
           {selectedLocation === "region" && (
             <View style={styles.regionRow}>
               <TouchableOpacity
-                style={[styles.regionBox, selectedSido && styles.regionBoxActive]}
+                style={[
+                  styles.regionBox,
+                  selectedSido && styles.regionBoxActive,
+                ]}
                 onPress={() => openModal("sido")}
               >
                 <Text
@@ -388,7 +388,7 @@ export default function Search() {
 
         <View style={styles.bottomWhiteFix} />
 
-        {/* 🔵 팝업 */}
+        {/* 🔵 검색 팝업 */}
         {searchPopupVisible && (
           <>
             <View style={styles.popupOverlay} />
@@ -454,19 +454,20 @@ export default function Search() {
           </>
         )}
 
+        {/* 🔵 하단바 (이미지 제거 → 커스텀 BottomTabBar 적용) */}
         {!searchPopupVisible && (
-          <Image
-            source={require("../../assets/images/bottomsearch.png")}
-            style={styles.bottomTab}
-          />
+          <BottomTabBar activeKey="search" />
         )}
+
       </View>
     </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  /* ⬆️ 네가 준 스타일 그대로 — 삭제/수정 없음 */
+
+  /* ---- 네가 준 스타일 그대로 (하단바 외 절대 수정 없음) ---- */
+
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
@@ -724,15 +725,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: "#FFFFFF",
     fontWeight: "700",
-  },
-
-  bottomTab: {
-    width: "100%",
-    height: undefined,
-    aspectRatio: 604 / 153,
-    position: "absolute",
-    bottom: 11,
-    resizeMode: "contain",
   },
 
   bottomWhiteFix: {

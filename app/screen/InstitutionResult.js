@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import BottomTabBar from "../../components/BottomTabBar";
 
 const { width } = Dimensions.get("window");
 
@@ -55,7 +56,11 @@ export default function InstitutionResult() {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-      <TouchableOpacity onPress={() => router.push(`/screen/Search?keyword=${searchText}`)}>
+        <TouchableOpacity
+          onPress={() =>
+            router.push(`/screen/Search?keyword=${searchText}`)
+          }
+        >
           <Ionicons name="chevron-back" size={26} color="#162B40" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>검색 결과</Text>
@@ -88,9 +93,7 @@ export default function InstitutionResult() {
           <TouchableOpacity
             key={item.id}
             onPress={() =>
-              router.push(
-                `/screen/Institution?id=${item.id}&keyword=${keyword}`
-              )
+              router.push(`/screen/Institution?id=${item.id}&keyword=${keyword}`)
             }
             activeOpacity={0.9}
           >
@@ -134,13 +137,11 @@ export default function InstitutionResult() {
           </TouchableOpacity>
         ))}
 
-        <View style={{ height: 120 }} />
+        <View style={{ height: 140 }} />
       </ScrollView>
 
-      <Image
-        source={require("../../assets/images/bottomsearch.png")}
-        style={styles.bottomTab}
-      />
+      {/* 🔥 새 하단바 적용 */}
+      <BottomTabBar activeKey="search" />
     </View>
   );
 }
@@ -258,13 +259,5 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 15,
     color: "#2C3E50",
-  },
-  bottomTab: {
-    width: "100%",
-    height: undefined,
-    aspectRatio: 604 / 153,
-    position: "absolute",
-    bottom: 10,
-    resizeMode: "contain",
   },
 });
