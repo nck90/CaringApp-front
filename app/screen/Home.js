@@ -10,6 +10,8 @@ import {
   View,
 } from "react-native";
 
+import BottomTabBar from "../../components/BottomTabBar"; // ⭐ 추가
+
 const { width } = Dimensions.get("window");
 
 export default function Home() {
@@ -22,10 +24,8 @@ export default function Home() {
     require("../../assets/images/search.png"),
     require("../../assets/images/reservation.png"),
     require("../../assets/images/use.png"),
-    require("../../assets/images/bottomhome.png"),
   ]);
 
-  // 로딩 전 화면 렌더 X → 이미지가 즉시 뜨게 됨
   if (!loaded) return null;
 
   const seniorName = "OOO";
@@ -107,49 +107,15 @@ export default function Home() {
       </View>
 
       {/* --------------------------- */}
-      {/* 하단 네비바 */}
+      {/* ⭐ 하단 네비바 (커스텀 둥근 탭바) */}
       {/* --------------------------- */}
-      <View style={styles.bottomBarContainer}>
-
-        <Image
-          source={require("../../assets/images/bottomhome.png")}
-          style={styles.bottomImage}
-        />
-
-        <View style={styles.iconHitboxes}>
-          <TouchableOpacity
-            style={[styles.iconButton, { left: "10%" }]}
-            onPress={() => router.push("/screen/Recommend")}
-          />
-
-          <TouchableOpacity
-            style={[styles.iconButton, { left: "30%" }]}
-            onPress={() => router.push("/screen/Search")}
-          />
-
-          <TouchableOpacity
-            style={[styles.centerButton, { left: "50%" }]}
-          />
-
-          <TouchableOpacity
-            style={[styles.iconButton, { left: "70%" }]}
-            onPress={() => router.push("/screen/People")}
-          />
-
-          <TouchableOpacity
-            style={[styles.iconButton, { left: "90%" }]}
-            onPress={() => router.push("/screen/Mypage")}
-          />
-        </View>
-
-      </View>
+      <BottomTabBar activeKey="home" />
 
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
     backgroundColor: "#F7F9FC",
@@ -185,7 +151,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EAEAEA",
     borderRadius: 12,
     alignSelf: "center",
-    marginBottom: 23,
+    marginBottom: 17,
   },
 
   fixedContent: {
@@ -195,7 +161,7 @@ const styles = StyleSheet.create({
 
   greetingBox: {
     marginLeft: 25,
-    marginBottom: 23,
+    marginBottom: 17,
   },
 
   greeting1: {
@@ -215,7 +181,7 @@ const styles = StyleSheet.create({
     width: "90%",
     height: 150,
     alignSelf: "center",
-    marginBottom: 23,
+    marginBottom: 17,
   },
 
   cardImageBlueGreen: {
@@ -238,46 +204,5 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 20,
-  },
-
-  bottomBarContainer: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    backgroundColor: "#FFFFFF",
-    paddingBottom: 15,
-    alignItems: "center",
-  },
-
-  bottomImage: {
-    width: "100%",
-    height: undefined,
-    aspectRatio: 604 / 153,
-    position: "absolute",
-    bottom: 11,
-    resizeMode: "contain",
-  },
-
-  iconHitboxes: {
-    position: "absolute",
-    bottom: 18,
-    width: "100%",
-    height: 45,
-  },
-
-  iconButton: {
-    position: "absolute",
-    width: 55,
-    height: 55,
-    borderRadius: 28,
-    marginLeft: -27,
-  },
-
-  centerButton: {
-    position: "absolute",
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    marginLeft: -35,
   },
 });

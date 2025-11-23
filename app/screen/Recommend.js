@@ -2,14 +2,16 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import {
-    Dimensions,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+
+import BottomTabBar from "../../components/BottomTabBar"; // ⭐ 추가 (경로는 너 프로젝트 기준)
 
 const { width, height } = Dimensions.get("window");
 
@@ -38,7 +40,7 @@ export default function Recommend() {
   return (
     <LinearGradient colors={["#FFFFFF", "#D7EEFF"]} style={styles.container}>
 
-      {/* 🔥 상단 문구 */}
+      {/* 상단 문구 */}
       <View style={styles.header}>
         <Text style={styles.title}>
           더 나은 선택을 위해{"\n"}기관을 추천해드릴게요
@@ -48,22 +50,19 @@ export default function Recommend() {
         </Text>
       </View>
 
-      {/* 🔥 카드 스크롤(세로 움직임 완전 차단) */}
+      {/* 카드 스크롤 */}
       <ScrollView
         ref={scrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         snapToInterval={CARD_WIDTH + CARD_SPACING}
         decelerationRate="fast"
-
-        // 🔥 iOS bounce 제거 & 세로 스크롤 완전 차단
         alwaysBounceVertical={false}
         alwaysBounceHorizontal={false}
         bounces={false}
         directionalLockEnabled={true}
         scrollEnabled={true}
         nestedScrollEnabled={false}
-
         contentContainerStyle={styles.scrollArea}
       >
         <TouchableOpacity style={styles.card}>
@@ -99,33 +98,8 @@ export default function Recommend() {
         <Text style={styles.startButtonText}>시작하기</Text>
       </TouchableOpacity>
 
-      {/* 하단바 */}
-      <View style={styles.bottomBarContainer}>
-        <Image
-          source={require("../../assets/images/bottomrecommend.png")}
-          style={styles.bottomImage}
-        />
-
-        <View style={styles.iconHitboxes}>
-          <TouchableOpacity style={[styles.centerButton, { left: "10%" }]} />
-          <TouchableOpacity
-            style={[styles.iconButton, { left: "30%" }]}
-            onPress={() => router.push("/screen/search")}
-          />
-          <TouchableOpacity
-            style={[styles.iconButton, { left: "50%" }]}
-            onPress={() => router.push("/screen/home")}
-          />
-          <TouchableOpacity
-            style={[styles.iconButton, { left: "70%" }]}
-            onPress={() => router.push("/screen/people")}
-          />
-          <TouchableOpacity
-            style={[styles.iconButton, { left: "90%" }]}
-            onPress={() => router.push("/screen/mypage")}
-          />
-        </View>
-      </View>
+      {/* ⭐ 새로운 하단바 (recommend 활성화) */}
+      <BottomTabBar activeKey="recommend" />
 
     </LinearGradient>
   );
@@ -165,7 +139,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: H_PADDING,
     marginBottom: 40,
     marginTop: -60,
-    // ❌ marginTop: -HEADER_DOWN 제거함 (세로 잘림 원인)
   },
 
   card: {
@@ -196,46 +169,5 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     fontWeight: "700",
-  },
-
-  bottomBarContainer: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    backgroundColor: "#FFFFFF",
-    paddingBottom: 15,
-    alignItems: "center",
-  },
-
-  bottomImage: {
-    width: "100%",
-    height: undefined,
-    aspectRatio: 604 / 153,
-    position: "absolute",
-    bottom: 11,
-    resizeMode: "contain",
-  },
-
-  iconHitboxes: {
-    position: "absolute",
-    bottom: 18,
-    width: "100%",
-    height: 55,
-  },
-
-  iconButton: {
-    position: "absolute",
-    width: 55,
-    height: 55,
-    borderRadius: 28,
-    marginLeft: -27,
-  },
-
-  centerButton: {
-    position: "absolute",
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    marginLeft: -35,
   },
 });

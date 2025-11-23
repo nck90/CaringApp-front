@@ -20,7 +20,7 @@ export default function RecommendStart() {
   useEffect(() => {
     Animated.timing(progress, {
       toValue: 1,        // 전체 원을 채움
-      duration: 6000,    // 🔥 로딩 6초
+      duration: 3000,    // 🔥 로딩 6초
       useNativeDriver: true,
     }).start(() => {
       // 🔥 6초 완료 → 다음 페이지로 이동
@@ -30,9 +30,9 @@ export default function RecommendStart() {
 
   // 🔵 체크박스 순서 진행
   useEffect(() => {
-    setTimeout(() => setStep(1), 1500);
-    setTimeout(() => setStep(2), 3000);
-    setTimeout(() => setStep(3), 4500);
+    setTimeout(() => setStep(1), 750);
+    setTimeout(() => setStep(2), 1500);
+    setTimeout(() => setStep(3), 2250);
   }, []);
 
   const strokeDashoffset = progress.interpolate({

@@ -9,16 +9,16 @@ const { width } = Dimensions.get("window");
 // 하단바 전체 높이
 const TAB_HEIGHT = 95;
 
-// 돋보기 원형 크기
+// 원형 크기
 const CIRCLE_SIZE = 60;
 
-// 패인 부분 너비 (기존 유지)
+// 패인 부분 너비
 const CURVE_WIDTH = 135;
 
-// 패인 깊이 (기존 유지)
+// 패인 깊이
 const CURVE_DEPTH = 40;
 
-// 모서리 둥글게 정도 (너가 요청한 그 기능)
+// 모서리 부드럽게
 const CURVE_SOFTEN = 30;
 
 export default function BottomTabBar({ activeKey }) {
@@ -28,19 +28,47 @@ export default function BottomTabBar({ activeKey }) {
   const ACTIVE = "#5DA7DB";
   const INACTIVE = "#C6CEDA";
 
-  // === 기존 코드 그대로 ===
+  // 탭 총 5개 → 동일한 너비
   const tabWidth = width / 5;
-  const searchCenterX = tabWidth * 1.625;
 
-  // === 패인데 곡선 계산 (내가 만든 부드러운 곡선) ===
-  const startX = searchCenterX - CURVE_WIDTH / 2;
-  const midX = searchCenterX;
-  const endX = searchCenterX + CURVE_WIDTH / 2;
+  // ⭐ 활성 탭에 따라 패인(centerX) 위치 이동
+  const getCenterX = () => {
+    switch (activeKey) {
+      case "recommend":
+        return tabWidth * 0.6;   // 1번 탭
+      case "search":
+        return tabWidth * 1.625;   // 2번 탭
+      case "home":
+        return tabWidth * 2.56;   // 3번 탭
+      case "consult":
+        return tabWidth * 3.625;   // 4번 탭
+      case "mypage":
+        return tabWidth * 4.625;   // 5번 탭
+      default:
+        return tabWidth * 1.625;   // 기본 검색
+    }
+  };
+
+  const centerX = getCenterX();
+
+  // ⭐ 패인부 곡선 계산
+  const startX = centerX - CURVE_WIDTH / 2;
+  const midX = centerX;
+  const endX = centerX + CURVE_WIDTH / 2;
+
+  // ⭐ 특정 탭이 중앙 원형 안으로 들어가도록 처리
+  const renderCircularIcon = (name) => (
+    <View style={styles.circleWrapper}>
+      <View style={styles.circle}>
+        <Ionicons name={name} size={32} color={ACTIVE} />
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.wrapper}>
 
-      {/* === 패인데 곡선만 교체 === */}
+      {/* ⭐ 패인된 곡선 배경 */}
       <Svg width={width} height={TAB_HEIGHT} style={styles.svg}>
         <Path
           d={`
@@ -64,54 +92,88 @@ export default function BottomTabBar({ activeKey }) {
         />
       </Svg>
 
-      {/* === 아이콘 영역 (절대 수정 금지 영역) === */}
+      {/* === 아이콘 영역 === */}
       <View style={styles.tabContainer}>
 
         {/* 1. 기관 추천 */}
         <TouchableOpacity style={styles.tabBtn} onPress={() => go("/screen/Recommend")}>
-          <Ionicons name="star-outline" size={30} color={activeKey === "recommend" ? ACTIVE : INACTIVE} />
-          <Text style={[styles.label, activeKey === "recommend" && styles.activeLabel]}>
+          {activeKey === "recommend"
+            ? renderCircularIcon("star")
+            : <Ionicons name="star-outline" size={30} color={INACTIVE} />
+          }
+
+          <Text style={[styles.label, activeKey === "recommend" && styles.activeLabel,
+            activeKey === "recommend" && { marginTop: 38 }]}>
             기관 추천
           </Text>
         </TouchableOpacity>
 
-        {/* 2. 기관 검색 (원형 위치 그대로 유지) */}
+
+        {/* 2. 기관 검색 */}
         <TouchableOpacity style={styles.tabBtn} onPress={() => go("/screen/Search")}>
+          {activeKey === "search"
+            ? renderCircularIcon("search")
+            : <Ionicons name="search-outline" size={30} color={INACTIVE} />
+          }
 
-          {/* === 돋보기 원형: 네 코드 그대로 === */}
-          <View style={styles.circleWrapper}>
-            <View style={styles.circle}>
-              <Ionicons name="search" size={32} color={ACTIVE} />
-            </View>
-          </View>
-
-          <Text
-            style={[
-              styles.label,
-              activeKey === "search" && styles.activeLabel,
-              { marginTop: 38 }
-            ]}
-          >
+          <Text style={[
+            styles.label,
+            activeKey === "search" && styles.activeLabel,
+            activeKey === "search" && { marginTop: 38 }
+          ]}>
             기관 검색
           </Text>
         </TouchableOpacity>
 
+
         {/* 3. 홈 */}
         <TouchableOpacity style={styles.tabBtn} onPress={() => go("/screen/Home")}>
-          <Ionicons name="home-outline" size={30} color={activeKey === "home" ? ACTIVE : INACTIVE} />
-          <Text style={[styles.label, activeKey === "home" && styles.activeLabel]}>홈</Text>
+          {activeKey === "home"
+            ? renderCircularIcon("home")
+            : <Ionicons name="home-outline" size={30} color={INACTIVE} />
+          }
+
+          <Text style={[
+            styles.label,
+            activeKey === "home" && styles.activeLabel,
+            activeKey === "home" && { marginTop: 38 }
+          ]}>
+            홈
+          </Text>
         </TouchableOpacity>
+
 
         {/* 4. 상담 */}
         <TouchableOpacity style={styles.tabBtn} onPress={() => go("/screen/Consult")}>
-          <Ionicons name="people-outline" size={30} color={activeKey === "consult" ? ACTIVE : INACTIVE} />
-          <Text style={[styles.label, activeKey === "consult" && styles.activeLabel]}>상담</Text>
+          {activeKey === "consult"
+            ? renderCircularIcon("people")
+            : <Ionicons name="people-outline" size={30} color={INACTIVE} />
+          }
+
+          <Text style={[
+            styles.label,
+            activeKey === "consult" && styles.activeLabel,
+            activeKey === "consult" && { marginTop: 38 }
+          ]}>
+            상담
+          </Text>
         </TouchableOpacity>
+
 
         {/* 5. 마이페이지 */}
         <TouchableOpacity style={styles.tabBtn} onPress={() => go("/screen/Mypage")}>
-          <Ionicons name="person-outline" size={30} color={activeKey === "mypage" ? ACTIVE : INACTIVE} />
-          <Text style={[styles.label, activeKey === "mypage" && styles.activeLabel]}>마이페이지</Text>
+          {activeKey === "mypage"
+            ? renderCircularIcon("person")
+            : <Ionicons name="person-outline" size={30} color={INACTIVE} />
+          }
+
+          <Text style={[
+            styles.label,
+            activeKey === "mypage" && styles.activeLabel,
+            activeKey === "mypage" && { marginTop: 38 }
+          ]}>
+            마이페이지
+          </Text>
         </TouchableOpacity>
 
       </View>
@@ -154,7 +216,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  /* === 돋보기 원형: 네 코드 그대로 유지 === */
+  /* === 원형 컨테이너 === */
   circleWrapper: {
     position: "absolute",
     top: -40,
