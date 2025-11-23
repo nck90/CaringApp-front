@@ -1,291 +1,283 @@
-import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import { useAssets } from "expo-asset";
+import { useRouter } from "expo-router";
+import React from "react";
 import {
   Dimensions,
   Image,
-  ScrollView,
   StyleSheet,
-  Switch,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 
 const { width } = Dimensions.get("window");
 
-export default function Search() {
-  const [selectedType, setSelectedType] = useState(null);
-  const [selectedLocation, setSelectedLocation] = useState(null);
-  const [isAvailable, setIsAvailable] = useState(false);
+export default function Home() {
+  const router = useRouter();
 
-  const TYPE_LIST = ["데이케어센터", "요양원", "재가 돌봄 서비스"];
+  // 🔥 모든 이미지 미리 로딩
+  const [loaded] = useAssets([
+    require("../../assets/images/logo.png"),
+    require("../../assets/images/icons/bell.png"),
+    require("../../assets/images/search.png"),
+    require("../../assets/images/reservation.png"),
+    require("../../assets/images/use.png"),
+    require("../../assets/images/bottomhome.png"),
+  ]);
+
+  // 로딩 전 화면 렌더 X → 이미지가 즉시 뜨게 됨
+  if (!loaded) return null;
+
+  const seniorName = "OOO";
+  const guardianName = "OOO";
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 150 }}>
 
-        <Text style={styles.title}>기관 검색</Text>
-
-        <View style={styles.searchBox}>
-          <TextInput
-            placeholder="기관명을 검색하세요"
-            placeholderTextColor="#C6CDD5"
-            style={styles.searchInput}
+      {/* --------------------------- */}
+      {/* 상단 로고 + 벨 */}
+      {/* --------------------------- */}
+      <View style={styles.topRow}>
+        <View style={styles.logoBox}>
+          <Image
+            source={require("../../assets/images/logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
           />
-          <Ionicons name="search" size={20} color="#8A8A8A" />
         </View>
 
-        <View style={styles.filterBox}>
-          <Text style={styles.filterTitle}>맞춤형 필터</Text>
+        <TouchableOpacity onPress={() => router.push("/screen/bell")}>
+          <Image
+            source={require("../../assets/images/icons/bell.png")}
+            style={styles.bell}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </View>
 
-          <Text style={styles.subTitle}>요양시설 종류</Text>
-          <View style={styles.row}>
-            {TYPE_LIST.map((item) => (
-              <TouchableOpacity
-                key={item}
-                style={[
-                  styles.typeButton,
-                  selectedType === item && styles.typeButtonActive,
-                ]}
-                onPress={() => setSelectedType(item)}
-              >
-                <Text
-                  style={[
-                    styles.typeText,
-                    selectedType === item && styles.typeTextActive,
-                  ]}
-                >
-                  {item}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+      {/* 광고 */}
+      <View style={styles.bannerBox} />
 
-          <Text style={styles.subTitle}>위치</Text>
+      {/* --------------------------- */}
+      {/* 고정 콘텐츠 */}
+      {/* --------------------------- */}
+      <View style={styles.fixedContent}>
+        <View style={styles.greetingBox}>
+          <Text style={styles.greeting1}>안녕하세요!</Text>
+          <Text style={styles.greeting2}>
+            {seniorName}님 보호자 {guardianName}님!
+          </Text>
+        </View>
 
-          <View style={styles.radioGroup}>
-            <TouchableOpacity
-              style={styles.radioItem}
-              onPress={() => setSelectedLocation("region")}
-            >
-              <View
-                style={[
-                  styles.radioCircle,
-                  selectedLocation === "region" && styles.radioCircleActive,
-                ]}
-              />
-              <Text style={styles.radioLabel}>지역으로 검색</Text>
-            </TouchableOpacity>
+        {/* 파란 박스 */}
+        <TouchableOpacity
+          onPress={() => router.push("/screen/Search")}
+          style={styles.cardWrapperBlueGreen}
+        >
+          <Image
+            source={require("../../assets/images/search.png")}
+            style={styles.cardImageBlueGreen}
+            resizeMode="stretch"
+          />
+        </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.radioItem}
-              onPress={() => setSelectedLocation("nearby")}
-            >
-              <View
-                style={[
-                  styles.radioCircle,
-                  selectedLocation === "nearby" && styles.radioCircleActive,
-                ]}
-              />
-              <Text style={styles.radioLabel}>내 주변에서 검색</Text>
-            </TouchableOpacity>
-          </View>
+        {/* 초록 박스 */}
+        <TouchableOpacity
+          onPress={() => router.push("/screen/reservation")}
+          style={styles.cardWrapperBlueGreen}
+        >
+          <Image
+            source={require("../../assets/images/reservation.png")}
+            style={styles.cardImageBlueGreen}
+            resizeMode="stretch"
+          />
+        </TouchableOpacity>
 
-          <Text style={styles.subTitle}>가격</Text>
+        {/* 하얀 박스 */}
+        <TouchableOpacity
+          onPress={() => router.push("/screen/use")}
+          style={styles.cardWrapperWhite}
+        >
+          <Image
+            source={require("../../assets/images/use.png")}
+            style={styles.cardImageWhite}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </View>
 
-          <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
-            <Text style={styles.priceRangeRight}>0~200만원</Text>
-          </View>
+      {/* --------------------------- */}
+      {/* 하단 네비바 */}
+      {/* --------------------------- */}
+      <View style={styles.bottomBarContainer}>
 
-          <View style={styles.priceBar} />
-          <View style={styles.priceHandle} />
-          <Text style={styles.priceValue}>0원</Text>
+        <Image
+          source={require("../../assets/images/bottomhome.png")}
+          style={styles.bottomImage}
+        />
 
-          <Text style={styles.subTitle}>입소 가능 여부</Text>
-
-          <Switch
-            value={isAvailable}
-            onValueChange={setIsAvailable}
-            trackColor={{ false: "#D9D9D9", true: "#5DA7DB" }}
-            thumbColor="#FFFFFF"
-            style={{ marginTop: 10 }}
+        <View style={styles.iconHitboxes}>
+          <TouchableOpacity
+            style={[styles.iconButton, { left: "10%" }]}
+            onPress={() => router.push("/screen/Recommend")}
           />
 
-          <TouchableOpacity style={styles.applyButton}>
-            <Text style={styles.applyText}>적용하기</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+          <TouchableOpacity
+            style={[styles.iconButton, { left: "30%" }]}
+            onPress={() => router.push("/screen/Search")}
+          />
 
-      <Image
-        source={require("../../assets/images/bottomsearch.png")}
-        style={styles.bottomTab}
-      />
+          <TouchableOpacity
+            style={[styles.centerButton, { left: "50%" }]}
+          />
+
+          <TouchableOpacity
+            style={[styles.iconButton, { left: "70%" }]}
+            onPress={() => router.push("/screen/People")}
+          />
+
+          <TouchableOpacity
+            style={[styles.iconButton, { left: "90%" }]}
+            onPress={() => router.push("/screen/Mypage")}
+          />
+        </View>
+
+      </View>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F7F9FC",
+    paddingTop: 60,
   },
 
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#162B40",
-    marginTop: 20,
-    marginLeft: 20,
-  },
-
-  searchBox: {
-    height: 48,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#E4E9EE",
-    backgroundColor: "#F7F9FB",
-    marginHorizontal: 20,
-    marginTop: 15,
-    paddingHorizontal: 15,
+  /* 상단 */
+  topRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-  },
-
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: "#162B40",
-    marginRight: 10,
-  },
-
-  filterBox: {
-    backgroundColor: "#F7F9FB",
-    marginTop: 30,
     paddingHorizontal: 20,
-    paddingVertical: 25,
-  },
-
-  filterTitle: {
-    fontSize: 19,
-    fontWeight: "700",
-    color: "#162B40",
-  },
-
-  subTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#162B40",
-    marginTop: 25,
-    marginBottom: 10,
-  },
-
-  row: {
-    flexDirection: "row",
-    marginBottom: 10,
-  },
-
-  typeButton: {
-    backgroundColor: "#E7EDF2",
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    marginRight: 10,
-  },
-
-  typeButtonActive: {
-    backgroundColor: "#5DA7DB",
-  },
-
-  typeText: {
-    fontSize: 14,
-    color: "#5F6F7F",
-  },
-
-  typeTextActive: {
-    color: "#FFFFFF",
-  },
-
-  radioGroup: {
-    marginTop: 5,
-  },
-
-  radioItem: {
-    flexDirection: "row",
     alignItems: "center",
-    marginVertical: 8,
+    marginBottom: 15,
   },
 
-  radioCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#C4C4C4",
-    marginRight: 12,
+  logoBox: {
+    marginLeft: -70,
   },
 
-  radioCircleActive: {
-    backgroundColor: "#5DA7DB",
-    borderColor: "#5DA7DB",
+  logo: {
+    width: 220,
+    height: 70,
   },
 
-  radioLabel: {
-    fontSize: 15,
-    color: "#162B40",
+  bell: {
+    width: 32,
+    height: 32,
   },
 
-  priceRangeRight: {
-    fontSize: 13,
+  bannerBox: {
+    width: "90%",
+    height: 80,
+    backgroundColor: "#EAEAEA",
+    borderRadius: 12,
+    alignSelf: "center",
+    marginBottom: 23,
+  },
+
+  fixedContent: {
+    flexGrow: 0,
+    paddingBottom: 40,
+  },
+
+  greetingBox: {
+    marginLeft: 25,
+    marginBottom: 23,
+  },
+
+  greeting1: {
+    fontSize: 20,
+    fontWeight: "600",
     color: "#5DA7DB",
   },
 
-  priceBar: {
-    marginTop: 15,
-    height: 5,
-    backgroundColor: "#DCE8F2",
-    borderRadius: 3,
+  greeting2: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#5DA7DB",
+    marginTop: 3,
   },
 
-  priceHandle: {
-    width: 24,
-    height: 24,
-    backgroundColor: "#5DA7DB",
-    borderRadius: 12,
-    position: "absolute",
-    top: 330,
-    left: 20,
+  cardWrapperBlueGreen: {
+    width: "90%",
+    height: 150,
+    alignSelf: "center",
+    marginBottom: 23,
   },
 
-  priceValue: {
-    marginTop: 10,
-    fontSize: 14,
-    color: "#162B40",
+  cardImageBlueGreen: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 20,
   },
 
-  applyButton: {
-    marginTop: 25,
-    height: 55,
-    borderRadius: 12,
-    backgroundColor: "#D2E4F2",
+  cardWrapperWhite: {
+    width: "90%",
+    height: 120,
+    alignSelf: "center",
+    marginBottom: 12,
+    backgroundColor: "#F7F9FC",
     justifyContent: "center",
     alignItems: "center",
   },
 
-  applyText: {
-    fontSize: 17,
-    color: "#A7B9C7",
-    fontWeight: "700",
+  cardImageWhite: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 20,
   },
 
-  bottomTab: {
+  bottomBarContainer: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    paddingBottom: 15,
+    alignItems: "center",
+  },
+
+  bottomImage: {
     width: "100%",
     height: undefined,
     aspectRatio: 604 / 153,
     position: "absolute",
     bottom: 11,
     resizeMode: "contain",
+  },
+
+  iconHitboxes: {
+    position: "absolute",
+    bottom: 18,
+    width: "100%",
+    height: 45,
+  },
+
+  iconButton: {
+    position: "absolute",
+    width: 55,
+    height: 55,
+    borderRadius: 28,
+    marginLeft: -27,
+  },
+
+  centerButton: {
+    position: "absolute",
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    marginLeft: -35,
   },
 });
