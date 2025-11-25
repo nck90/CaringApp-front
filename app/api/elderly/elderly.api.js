@@ -3,15 +3,15 @@ import apiClient from "../axios";
 
 // --------------------------------------------------
 // 1. 내 어르신 프로필 목록 조회
-//    GET /api/v1/elderly-profiles
+//    GET /api/v1/me/elderly-profiles
 // --------------------------------------------------
 export const getMyElderlyProfiles = () => {
-  return apiClient.get("/elderly-profiles");
+  return apiClient.get("/me/elderly-profiles");
 };
 
 // --------------------------------------------------
 // 2. 내 어르신 프로필 생성
-//    POST /api/v1/elderly-profiles
+//    POST /api/v1/me/elderly-profiles
 // --------------------------------------------------
 export const createElderlyProfile = (payload) => {
   // payload = {
@@ -19,29 +19,29 @@ export const createElderlyProfile = (payload) => {
   //   activityLevel, cognitiveLevel, longTermCareGrade,
   //   notes, address: { zipCode, city, street }
   // }
-  return apiClient.post("/elderly-profiles", payload);
+  return apiClient.post("/me/elderly-profiles", payload);
 };
 
 // --------------------------------------------------
 // 3. 내 어르신 프로필 조회
-//    GET /api/v1/elderly-profiles/{profileId}
+//    GET /api/v1/me/elderly-profiles/{profileId}
 // --------------------------------------------------
 export const getElderlyProfileDetail = (profileId) => {
-  return apiClient.get(`/elderly-profiles/${profileId}`);
+  return apiClient.get(`/me/elderly-profiles/${profileId}`);
 };
 
 // --------------------------------------------------
 // 4. 내 어르신 프로필 수정
-//    PUT /api/v1/elderly-profiles/{profileId}
+//    PUT /api/v1/me/elderly-profiles/{profileId}
 // --------------------------------------------------
 export const updateElderlyProfile = (profileId, payload) => {
-  return apiClient.put(`/elderly-profiles/${profileId}`, payload);
+  return apiClient.put(`/me/elderly-profiles/${profileId}`, payload);
 };
 
 // --------------------------------------------------
 // 5. 내 어르신 프로필 삭제 (Soft delete)
-//    DELETE /api/v1/elderly-profiles/{profileId}
+//    DELETE /api/v1/me/elderly-profiles/{profileId}
 // --------------------------------------------------
 export const deleteElderlyProfile = (profileId) => {
-  return apiClient.delete(`/elderly-profiles/${profileId}`);
+  return apiClient.delete(`/me/elderly-profiles/${profileId}`);
 };

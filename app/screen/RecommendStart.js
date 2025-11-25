@@ -4,6 +4,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
+import { getPreferenceTags } from "../api/member/member.api";
+import { getInstitutionList } from "../api/institution/profile.api";
+
 export default function RecommendStart() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -16,13 +19,69 @@ export default function RecommendStart() {
   const radius = (circleSize - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
+  // 선호 태그를 기관 유형으로 매핑
+  const TAG_TO_INSTITUTION_TYPE = {
+    16: "DAY_CARE_CENTER", // 주간보호 -> 데이케어센터
+    18: "NURSING_HOME", // 장기요양 -> 요양원
+    22: "HOME_CARE_SERVICE", // 재가돌봄 -> 재가 돌봄 서비스
+  };
+
   useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        // 1. 선호 태그 조회
+        const tagsResponse = await getPreferenceTags();
+        const tags = tagsResponse.data.data?.tags || [];
+        const tagIds = tags.map((tag) => tag.id);
+
+        // 2. 선호 태그를 기관 유형으로 변환
+        const institutionTypes = tagIds
+          .map((tagId) => TAG_TO_INSTITUTION_TYPE[tagId])
+          .filter(Boolean);
+
+        // 3. 기관 목록 조회 (선호 태그 기반)
+        const institutionParams = {
+          page: 0,
+          size: 10,
+          sort: "name,asc",
+          isAdmissionAvailable: true,
+        };
+
+        // 선호 태그가 있으면 첫 번째 유형으로 필터링
+        if (institutionTypes.length > 0) {
+          institutionParams.institutionType = institutionTypes[0];
+        }
+
+        const institutionsResponse = await getInstitutionList(institutionParams);
+        const institutions = institutionsResponse.data.data?.content || [];
+
+        // 4. 추천 결과를 RecommendClear로 전달
+        router.push({
+          pathname: "/screen/RecommendClear",
+          params: {
+            institutions: JSON.stringify(institutions),
+            tagIds: JSON.stringify(tagIds),
+          },
+        });
+      } catch (error) {
+        console.log("Recommendation error:", error);
+        // 에러 발생 시 빈 결과로 이동
+        router.push({
+          pathname: "/screen/RecommendClear",
+          params: {
+            institutions: JSON.stringify([]),
+            tagIds: JSON.stringify([]),
+          },
+        });
+      }
+    };
+
     Animated.timing(progress, {
-      toValue: 1,       
-      duration: 3000,    
+      toValue: 1,
+      duration: 3000,
       useNativeDriver: true,
     }).start(() => {
-      router.push("/screen/RecommendClear");
+      fetchRecommendations();
     });
   }, []);
 

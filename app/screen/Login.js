@@ -2,6 +2,7 @@ import { useAssets } from "expo-asset";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  Alert,
   Dimensions,
   Image,
   Keyboard,
@@ -13,12 +14,16 @@ import {
   View,
 } from "react-native";
 
+import { loginUser, loginOAuth2 } from "../api/auth/auth.api";
+import { saveTokens } from "../utils/tokenHelper";
+
 const { width } = Dimensions.get("window");
 
 export default function Login() {
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const [focusedField, setFocusedField] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const [loaded] = useAssets([
@@ -27,6 +32,74 @@ export default function Login() {
     require("../../assets/images/google.png"),
     require("../../assets/images/kakao.png"),
   ]);
+
+  const handleLogin = async () => {
+    if (!id || !password) {
+      Alert.alert("입력 오류", "아이디와 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await loginUser({
+        username: id,
+        password: password,
+      });
+
+      const { access_token, refresh_token } = response.data.data || response.data;
+      
+      if (access_token) {
+        await saveTokens(access_token, refresh_token);
+        // 홈 화면으로 이동
+        router.replace("/screen/Home");
+      } else {
+        Alert.alert("로그인 실패", "로그인에 실패했습니다. 다시 시도해주세요.");
+      }
+    } catch (error) {
+      console.log("Login error:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.";
+      Alert.alert("로그인 실패", errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOAuthLogin = async (provider) => {
+    setIsLoading(true);
+    try {
+      // TODO: 실제 OAuth 플로우 구현 필요
+      // 1. OAuth 제공자로 리다이렉트하여 authorization_code 받기
+      // 2. 받은 authorization_code를 백엔드에 전달
+      
+      // 현재는 placeholder - 실제 구현 시 expo-auth-session 사용
+      Alert.alert(
+        "준비 중",
+        `${provider} 로그인은 현재 준비 중입니다. 일반 로그인을 이용해주세요.`
+      );
+      
+      // 실제 구현 예시 (주석 처리):
+      // const authResult = await promptAsync();
+      // if (authResult.type === 'success') {
+      //   const response = await loginOAuth2(provider, {
+      //     authorization_code: authResult.params.code,
+      //     state: authResult.params.state,
+      //   });
+      //   const { access_token, refresh_token } = response.data.data || response.data;
+      //   if (access_token) {
+      //     await saveTokens(access_token, refresh_token);
+      //     router.replace("/(tabs)");
+      //   }
+      // }
+    } catch (error) {
+      console.log("OAuth login error:", error);
+      Alert.alert("로그인 실패", "소셜 로그인에 실패했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (!loaded) return null;
 
@@ -86,28 +159,43 @@ export default function Login() {
         <TouchableOpacity
           style={[
             styles.loginButton,
-            !(id && password) && styles.loginButtonDisabled,
+            (!(id && password) || isLoading) && styles.loginButtonDisabled,
           ]}
-          disabled={!(id && password)}
+          disabled={!(id && password) || isLoading}
+          onPress={handleLogin}
         >
-          <Text style={styles.loginButtonText}>로그인</Text>
+          <Text style={styles.loginButtonText}>
+            {isLoading ? "로그인 중..." : "로그인"}
+          </Text>
         </TouchableOpacity>
 
         <Text style={styles.snsTitle}>SNS 계정으로 로그인</Text>
         <View style={styles.snsRow}>
-          <TouchableOpacity style={[styles.snsCircle, styles.naver]}>
+          <TouchableOpacity
+            style={[styles.snsCircle, styles.naver]}
+            onPress={() => handleOAuthLogin("naver")}
+            disabled={isLoading}
+          >
             <Image
               source={require("../../assets/images/naver.png")}
               style={styles.snsIcon}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.snsCircle, styles.google]}>
+          <TouchableOpacity
+            style={[styles.snsCircle, styles.google]}
+            onPress={() => handleOAuthLogin("google")}
+            disabled={isLoading}
+          >
             <Image
               source={require("../../assets/images/google.png")}
               style={styles.snsIcon}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.snsCircle, styles.kakao]}>
+          <TouchableOpacity
+            style={[styles.snsCircle, styles.kakao]}
+            onPress={() => handleOAuthLogin("kakao")}
+            disabled={isLoading}
+          >
             <Image
               source={require("../../assets/images/kakao.png")}
               style={styles.snsIcon}

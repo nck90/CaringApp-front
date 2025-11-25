@@ -20,11 +20,11 @@ export const createCounsel = (institutionId, payload) => {
 
 // --------------------------------------------------
 // 3. 상담 예약 가능 시간 조회
-//    GET /institutions/{institutionId}/counsels/{counselId}/time-slots?date=
+//    GET /institutions/{institutionId}/counsels/{counselId}?date=
 // --------------------------------------------------
 export const getCounselAvailableTimes = (institutionId, counselId, date) => {
   return apiClient.get(
-    `/institutions/${institutionId}/counsels/${counselId}/time-slots`,
+    `/institutions/${institutionId}/counsels/${counselId}`,
     {
       params: { date }, // yyyy-MM-dd
     }

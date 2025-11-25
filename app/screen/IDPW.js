@@ -16,6 +16,7 @@ import ProgressBar from "../../components/ProgressBar";
 import { registerUser } from "../api/auth/auth.api";
 import { useProgress } from "../context/ProgressContext";
 import { useSignup } from "../context/SignupContext";
+import { saveTokens } from "../utils/tokenHelper";
 
 export default function IDPW() {
   const router = useRouter();
@@ -97,20 +98,32 @@ export default function IDPW() {
     try {
       const res = await registerUser(payload, signupData.access_token);
 
-      updateSignup({
-        username: form.id,
-        email: form.email,
-        password: form.password,
-        accessToken: res.access_token,
-        refreshToken: res.refresh_token,
+      const { access_token, refresh_token } = res.data.data || res.data;
 
-      });
+      if (access_token) {
+        // AsyncStorage에 토큰 저장
+        await saveTokens(access_token, refresh_token);
+        
+        // Context에도 저장 (호환성 유지)
+        updateSignup({
+          username: form.id,
+          email: form.email,
+          password: form.password,
+          accessToken: access_token,
+          refreshToken: refresh_token,
+        });
 
-
-      router.push("/screen/GuardianInfo");
-    } catch(err) {
-      console.log(err);
-
+        router.push("/screen/GuardianInfo");
+      } else {
+        Alert.alert("회원가입 실패", "회원가입에 실패했습니다. 다시 시도해주세요.");
+      }
+    } catch (err) {
+      console.log("Register error:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "회원가입에 실패했습니다. 다시 시도해주세요.";
+      Alert.alert("회원가입 실패", errorMessage);
     }
   };
 

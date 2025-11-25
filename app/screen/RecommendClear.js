@@ -1,78 +1,55 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 const { width } = Dimensions.get("window");
 
 export default function RecommendClear() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [institutions, setInstitutions] = useState([]);
+  const [tagIds, setTagIds] = useState([]);
+  const hasInitialized = useRef(false);
+
+  // 기관 유형 한글 변환
+  const getInstitutionTypeLabel = (type) => {
+    const typeMap = {
+      DAY_CARE_CENTER: "데이케어센터",
+      NURSING_HOME: "요양원",
+      HOME_CARE_SERVICE: "재가 돌봄 서비스",
+    };
+    return typeMap[type] || type;
+  };
 
   useEffect(() => {
-    const mockData = [
-      {
-        id: 1,
-        name: "사랑재 요양원",
-        address: "서울시 광진구 자양로188",
-        type: "요양원",
-        possible: "입소 가능",
-        tags: ["치매", "청결"],
-        image:
-          "https://images.unsplash.com/photo-1583912268181-f8f4b897a85f?q=80&w=800",
-      },
-      {
-        id: 2,
-        name: "효심노인센터",
-        address: "서울시 강동구 천호동 22",
-        type: "데이케어센터",
-        possible: "예약 가능",
-        tags: ["케어", "전문"],
-        image:
-          "https://images.unsplash.com/photo-1576765607924-b29c2b30d2a8?q=80&w=800",
-      },
-      {
-        id: 3,
-        name: "편안한 요양센터",
-        address: "서울시 송파구 방이동 90",
-        type: "요양원",
-        possible: "입소 가능",
-        tags: ["친절", "전문"],
-        image:
-          "https://images.unsplash.com/photo-1549576490-b0b4831ef60a?q=80&w=800",
-      },
-      {
-        id: 4,
-        name: "하늘정원케어",
-        address: "서울시 중랑구 면목동",
-        type: "요양원",
-        possible: "대기 필요",
-        tags: ["재활", "청결"],
-        image:
-          "https://images.unsplash.com/photo-1597216967864-3a2d5c8f376e?q=80&w=800",
-      },
-      {
-        id: 5,
-        name: "다솜노인복지관",
-        address: "서울시 성동구 성수동",
-        type: "복지관",
-        possible: "상담 가능",
-        tags: ["프로그램", "식단"],
-        image:
-          "https://images.unsplash.com/photo-1556379094-df7a5f5d864c?q=80&w=800",
-      },
-    ];
-
-    setInstitutions(mockData);
-  }, []);
+    // 한 번만 실행되도록 보장
+    if (hasInitialized.current) return;
+    
+    try {
+      // RecommendStart에서 전달된 데이터 파싱
+      if (params.institutions) {
+        const parsed = JSON.parse(params.institutions);
+        setInstitutions(parsed);
+      }
+      if (params.tagIds) {
+        const parsed = JSON.parse(params.tagIds);
+        setTagIds(parsed);
+      }
+      hasInitialized.current = true;
+    } catch (error) {
+      console.log("Parse error:", error);
+      setInstitutions([]);
+      hasInitialized.current = true;
+    }
+  }, [params.institutions, params.tagIds]);
 
   return (
     <View style={styles.container}>
@@ -88,48 +65,74 @@ export default function RecommendClear() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.cardScroll}
       >
-        {institutions.map((item) => (
-          <View key={item.id} style={styles.card}>
-            <Image
-              source={{ uri: item.image }}
-              style={styles.cardImage}
-              resizeMode="cover"
-            />
-
-            <View style={styles.cardContent}>
-              <Text style={styles.cardType}>{item.type}</Text>
-              <Text style={styles.cardName}>{item.name}</Text>
-
-              <View style={styles.row}>
-                <Ionicons name="location-sharp" size={15} color="#5DA7DB" />
-                <Text style={styles.address}>{item.address}</Text>
-              </View>
-
-              <View style={styles.row}>
-                <Ionicons name="checkmark-circle" size={15} color="#5DA7DB" />
-                <Text style={styles.address}>{item.possible}</Text>
-              </View>
-
-              <View style={styles.tagRow}>
-                {item.tags.map((tag, idx) => (
-                  <View key={idx} style={styles.tag}>
-                    <Text style={styles.tagText}>{tag}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
+        {institutions.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>추천할 기관이 없습니다.</Text>
+            <Text style={styles.emptySubtext}>
+              선호 태그를 설정하거나 검색을 이용해주세요.
+            </Text>
           </View>
-        ))}
+        ) : (
+          institutions.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.card}
+              onPress={() =>
+                router.push({
+                  pathname: "/screen/Institution",
+                  params: { institutionId: item.id },
+                })
+              }
+            >
+              <View style={styles.cardImagePlaceholder}>
+                <Ionicons name="business" size={40} color="#CBD5E0" />
+              </View>
+
+              <View style={styles.cardContent}>
+                <Text style={styles.cardType}>
+                  {getInstitutionTypeLabel(item.institutionType)}
+                </Text>
+                <Text style={styles.cardName}>{item.name}</Text>
+
+                <View style={styles.row}>
+                  <Ionicons name="location-sharp" size={15} color="#5DA7DB" />
+                  <Text style={styles.address}>
+                    {item.address?.city} {item.address?.street}
+                  </Text>
+                </View>
+
+                <View style={styles.row}>
+                  <Ionicons name="checkmark-circle" size={15} color="#5DA7DB" />
+                  <Text style={styles.address}>
+                    {item.isAdmissionAvailable ? "입소 가능" : "입소 불가"}
+                  </Text>
+                </View>
+
+                {item.monthlyBaseFee && (
+                  <Text style={styles.price}>
+                    월 {item.monthlyBaseFee.toLocaleString()}원
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
 
-      <View style={styles.reasonBox}>
-        <Text style={styles.reasonTitle}>기관 추천 이유</Text>
-        <Text style={styles.reasonText}>
-          회원님의 <Text style={styles.bold}>치매 케어 + 청결</Text> 조건과 가장 잘 맞는 기관입니다.
-          사랑재 요양원은 <Text style={styles.bold}>치매 전문, 인지훈련</Text> 서비스를 제공하며{" "}
-          리뷰에서는 <Text style={styles.bold}>청결함</Text>이 높게 평가되었습니다.
-        </Text>
-      </View>
+      {institutions.length > 0 && (
+        <View style={styles.reasonBox}>
+          <Text style={styles.reasonTitle}>기관 추천 이유</Text>
+          <Text style={styles.reasonText}>
+            회원님의 선호 태그를 기반으로 추천된 기관입니다.
+            {tagIds.length > 0 && (
+              <>
+                {" "}
+                선택하신 선호 태그에 맞는 기관을 우선적으로 추천했습니다.
+              </>
+            )}
+          </Text>
+        </View>
+      )}
 
       <View style={styles.bottomBox}>
         <TouchableOpacity
@@ -196,6 +199,36 @@ const styles = StyleSheet.create({
     height: 160,
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
+  },
+  cardImagePlaceholder: {
+    width: "100%",
+    height: 160,
+    backgroundColor: "#F7F9FB",
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#6B7B8C",
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: "#A0A9B2",
+    textAlign: "center",
+  },
+  price: {
+    fontSize: 14,
+    color: "#162B40",
+    fontWeight: "600",
+    marginTop: 8,
   },
 
   cardContent: {

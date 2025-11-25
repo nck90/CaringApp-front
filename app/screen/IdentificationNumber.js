@@ -47,13 +47,7 @@ export default function IdentificationNumber() {
       Alert.alert("입력 오류", "인증번호 6자리를 입력해주세요.");
       return;
     }
-    if (form.code !== "123456") {
-      Alert.alert("오류", "인증번호가 일치하지 않습니다.");
-      return;
-    }
-
     try {
-  
       const payload = {
         name: signupData.name,
         birth_date: signupData.birth_date,  
@@ -67,15 +61,23 @@ export default function IdentificationNumber() {
 
       console.log("서버 응답:", response?.data);
 
-      updateSignup({
-        access_token: response?.data?.access_token,
-        refresh_token: response?.data?.refresh_token,
-      });
+      const { access_token, refresh_token } = response.data.data || response.data;
 
-      router.push("/screen/IDPW");
+      if (access_token) {
+        updateSignup({
+          access_token,
+          refresh_token,
+        });
+        router.push("/screen/IDPW");
+      } else {
+        Alert.alert("오류", "인증에 실패했습니다. 다시 시도해주세요.");
+      }
     } catch (error) {
       console.log("인증번호 검증 실패:", error?.response?.data);
-      Alert.alert("오류", "서버 인증에 실패했습니다.");
+      const errorMessage =
+        error.response?.data?.message ||
+        "인증번호가 일치하지 않습니다. 다시 확인해주세요.";
+      Alert.alert("인증 실패", errorMessage);
     }
   };
 
