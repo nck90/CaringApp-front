@@ -41,12 +41,7 @@ export const deleteCounsel = (institutionId, counselId) => {
   );
 };
 
-// --------------------------------------------------
-// 5. 상담 서비스 정보 수정
-//    PATCH /institutions/{institutionId}/counsels/{counselId}
-// --------------------------------------------------
 export const updateCounsel = (institutionId, counselId, payload) => {
-  // payload = { title, description }
   return apiClient.patch(
     `/institutions/${institutionId}/counsels/${counselId}`,
     payload

@@ -13,6 +13,7 @@ import {
 
 import { createReview, updateReview } from "../api/review/review.api";
 import { getReviewDetail } from "../api/review/review.api";
+import { getTagsByCategory } from "../api/tag/tag.api";
 
 export default function ReviewWrite() {
   const router = useRouter();
@@ -27,22 +28,31 @@ export default function ReviewWrite() {
   const [rating, setRating] = useState(0);
   const [content, setContent] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  const availableTags = [
-    { id: 1, name: "청결함" },
-    { id: 2, name: "친절" },
-    { id: 3, name: "서비스" },
-    { id: 4, name: "시설" },
-    { id: 5, name: "식사" },
-    { id: 6, name: "프로그램" },
-  ];
+  const [loadingTags, setLoadingTags] = useState(true);
 
   useEffect(() => {
+    fetchReviewTags();
     if (isEdit) {
       fetchReviewDetail();
     }
   }, [reviewId]);
+
+  const fetchReviewTags = async () => {
+    try {
+      setLoadingTags(true);
+      const response = await getTagsByCategory("REVIEW");
+      const data = response.data.data || response.data;
+      setAvailableTags(data.tags || []);
+    } catch (error) {
+      console.log("Fetch review tags error:", error);
+      // 에러 발생 시 빈 배열로 설정
+      setAvailableTags([]);
+    } finally {
+      setLoadingTags(false);
+    }
+  };
 
   const fetchReviewDetail = async () => {
     try {
@@ -165,30 +175,36 @@ export default function ReviewWrite() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>태그 선택 (선택사항)</Text>
-          <View style={styles.tagContainer}>
-            {availableTags.map((tag) => {
-              const isSelected = selectedTags.includes(tag.id);
-              return (
-                <TouchableOpacity
-                  key={tag.id}
-                  style={[
-                    styles.tagButton,
-                    isSelected && styles.tagButtonSelected,
-                  ]}
-                  onPress={() => handleTagToggle(tag.id)}
-                >
-                  <Text
+          {loadingTags ? (
+            <Text style={styles.loadingText}>태그를 불러오는 중...</Text>
+          ) : availableTags.length === 0 ? (
+            <Text style={styles.emptyText}>사용 가능한 태그가 없습니다.</Text>
+          ) : (
+            <View style={styles.tagContainer}>
+              {availableTags.map((tag) => {
+                const isSelected = selectedTags.includes(tag.id);
+                return (
+                  <TouchableOpacity
+                    key={tag.id}
                     style={[
-                      styles.tagText,
-                      isSelected && styles.tagTextSelected,
+                      styles.tagButton,
+                      isSelected && styles.tagButtonSelected,
                     ]}
+                    onPress={() => handleTagToggle(tag.id)}
                   >
-                    {tag.name}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                    <Text
+                      style={[
+                        styles.tagText,
+                        isSelected && styles.tagTextSelected,
+                      ]}
+                    >
+                      {tag.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
         </View>
 
         <View style={{ height: 100 }} />
@@ -320,6 +336,18 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "700",
+  },
+  loadingText: {
+    fontSize: 14,
+    color: "#6B7B8C",
+    textAlign: "center",
+    paddingVertical: 20,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#9CA3AF",
+    textAlign: "center",
+    paddingVertical: 20,
   },
 });
 

@@ -1,7 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -12,39 +14,170 @@ import {
   View
 } from "react-native";
 
+import { getMessagesAsMember, sendMessageAsMember, closeChatAsMember, getChatRoomInfoAsMember, pollMessagesAsMember, deleteMessageAsMember } from "../api/chat/chat.api";
+
 export default function CounselChat() {
   const router = useRouter();
-  const { id, name } = useLocalSearchParams();
+  const { id, name, chatRoomId } = useLocalSearchParams();
 
-  const [messages, setMessages] = useState([
-    { id: 1, text: "채팅내용", time: "09:46", isMe: true },
-    { id: 2, text: "채팅내용", time: "09:46", isMe: false }
-  ]);
-
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [chatRoomInfo, setChatRoomInfo] = useState(null);
+  const [polling, setPolling] = useState(false);
   const scrollRef = useRef(null);
+  const pollingIntervalRef = useRef(null);
 
-  const getTime = () => {
-    const now = new Date();
-    return `${String(now.getHours()).padStart(2, "0")}:${String(
-      now.getMinutes()
-    ).padStart(2, "0")}`;
+  useEffect(() => {
+    if (chatRoomId) {
+      fetchChatRoomInfo();
+      fetchMessages();
+      startPolling();
+    } else {
+      setLoading(false);
+    }
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [chatRoomId]);
+
+  const fetchChatRoomInfo = async () => {
+    if (!chatRoomId) return;
+
+    try {
+      const response = await getChatRoomInfoAsMember(chatRoomId);
+      const info = response.data.data || response.data;
+      setChatRoomInfo(info);
+    } catch (error) {
+      console.log("Fetch chat room info error:", error);
+    }
   };
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
+  const fetchMessages = async () => {
+    if (!chatRoomId) return;
+    
+    try {
+      setLoading(true);
+      const response = await getMessagesAsMember(chatRoomId, {
+        page: 0,
+        size: 50,
+        sort: ["createdAt,asc"],
+      });
+      
+      const messageData = response.data.data?.messages || [];
+      setMessages(messageData.map((msg) => ({
+        id: msg.id,
+        text: msg.content,
+        time: new Date(msg.createdAt).toLocaleTimeString("ko-KR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        isMe: msg.senderType === "MEMBER",
+        senderName: msg.senderName,
+      })));
+    } catch (error) {
+      console.log("Fetch messages error:", error);
+      Alert.alert("오류", "메시지를 불러오는데 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const newMsg = {
-      id: Date.now(),
-      text: input,
-      time: getTime(),
-      isMe: true
-    };
+  const sendMessage = async () => {
+    if (!input.trim() || !chatRoomId || sending) return;
 
-    setMessages((prev) => [...prev, newMsg]);
-    setInput("");
+    try {
+      setSending(true);
+      const response = await sendMessageAsMember(chatRoomId, {
+        content: input.trim(),
+      });
 
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 30);
+      const newMsg = response.data.data;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: newMsg.id,
+          text: newMsg.content,
+          time: new Date(newMsg.createdAt).toLocaleTimeString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          isMe: newMsg.senderType === "MEMBER",
+          senderName: newMsg.senderName,
+        },
+      ]);
+      setInput("");
+
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 30);
+    } catch (error) {
+      console.log("Send message error:", error);
+      Alert.alert("오류", "메시지 전송에 실패했습니다.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const startPolling = () => {
+    if (!chatRoomId || polling) return;
+
+    setPolling(true);
+    pollingIntervalRef.current = setInterval(async () => {
+      try {
+        const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : 0;
+        if (lastMessageId === 0) return;
+
+        const response = await pollMessagesAsMember(chatRoomId, lastMessageId);
+        const newMessages = response.data.data || [];
+
+        if (newMessages.length > 0) {
+          const formattedMessages = newMessages.map((msg) => ({
+            id: msg.id,
+            text: msg.content,
+            time: new Date(msg.createdAt).toLocaleTimeString("ko-KR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            isMe: msg.senderType === "MEMBER",
+            senderName: msg.senderName,
+          }));
+
+          setMessages((prev) => [...prev, ...formattedMessages]);
+          setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 30);
+        }
+      } catch (error) {
+        console.log("Poll messages error:", error);
+        // 폴링 에러는 조용히 처리 (타임아웃 등)
+      }
+    }, 5000);
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    if (!chatRoomId) return;
+
+    Alert.alert(
+      "메시지 삭제",
+      "이 메시지를 삭제하시겠습니까?",
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "삭제",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteMessageAsMember(chatRoomId, messageId);
+              setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+            } catch (error) {
+              console.log("Delete message error:", error);
+              Alert.alert("오류", "메시지 삭제에 실패했습니다.");
+            }
+          },
+        },
+      ]
+    );
   };
 
   const isActive = input.trim().length > 0;
@@ -77,13 +210,24 @@ export default function CounselChat() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 5 }}
         >
-          {messages.map((msg) => (
-            <View
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#5DA7DB" />
+            </View>
+          ) : messages.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>메시지가 없습니다.</Text>
+            </View>
+          ) : (
+            messages.map((msg) => (
+            <TouchableOpacity
               key={msg.id}
               style={[
                 styles.messageWrapper,
                 msg.isMe ? styles.myWrapper : styles.otherWrapper
               ]}
+              onLongPress={() => msg.isMe && handleDeleteMessage(msg.id)}
+              activeOpacity={0.8}
             >
               <View style={styles.rowBubble}>
                 {msg.isMe ? (
@@ -104,8 +248,9 @@ export default function CounselChat() {
                   </>
                 )}
               </View>
-            </View>
-          ))}
+            </TouchableOpacity>
+            ))
+          )}
         </ScrollView>
 
         <View style={styles.inputArea}>
@@ -121,15 +266,19 @@ export default function CounselChat() {
 
             <TouchableOpacity
               onPress={sendMessage}
-              disabled={!isActive}
+              disabled={!isActive || sending}
               style={styles.sendIconWrapper}
             >
-              <Ionicons
-                name="paper-plane-outline"
-                size={22}
-                color={isActive ? "#5DA7DB" : "#B6BCC3"}
-                style={{ transform: [{ rotate: "20deg" }] }}
-              />
+              {sending ? (
+                <ActivityIndicator size="small" color="#5DA7DB" />
+              ) : (
+                <Ionicons
+                  name="paper-plane-outline"
+                  size={22}
+                  color={isActive ? "#5DA7DB" : "#B6BCC3"}
+                  style={{ transform: [{ rotate: "20deg" }] }}
+                />
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -252,5 +401,21 @@ const styles = StyleSheet.create({
     top: "50%",
     transform: [{ translateY: -16 }],
     padding: 4
-  }
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 50,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 50,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#8A8A8A",
+  },
 });

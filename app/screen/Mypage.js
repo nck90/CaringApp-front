@@ -2,18 +2,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import BottomTabBar from "../../components/BottomTabBar";
 import { getMyPage, getMyStatistics, getPreferenceTags } from "../api/member/member.api";
-import { getMyReviews } from "../api/review/review.api";
+import { deleteReview, getMyReviews } from "../api/review/review.api";
 import { clearTokens, getAccessToken } from "../utils/tokenHelper";
 
 const { width } = Dimensions.get("window");
@@ -112,6 +112,36 @@ export default function Mypage() {
     );
   };
 
+  const handleDeleteReview = async (reviewId) => {
+    Alert.alert(
+      "리뷰 삭제",
+      "정말 이 리뷰를 삭제하시겠습니까?",
+      [
+        {
+          text: "취소",
+          style: "cancel",
+        },
+        {
+          text: "삭제",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteReview(reviewId);
+              Alert.alert("삭제 완료", "리뷰가 삭제되었습니다.");
+              // 리뷰 목록 새로고침
+              fetchMypageData();
+            } catch (error) {
+              console.log("Delete review error:", error);
+              const errorMessage =
+                error.response?.data?.message || "리뷰 삭제에 실패했습니다.";
+              Alert.alert("오류", errorMessage);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
@@ -192,38 +222,45 @@ export default function Mypage() {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>내 리뷰 ({myReviews.length}개)</Text>
                 {myReviews.slice(0, 3).map((review) => (
-                  <TouchableOpacity
-                    key={review.id}
-                    style={styles.reviewCard}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/screen/ReviewWrite",
-                        params: {
-                          reviewId: review.id,
-                          institutionId: review.institution?.id,
-                          institutionName: review.institution?.name,
-                          reservationId: review.reservationId,
-                        },
-                      })
-                    }
-                  >
-                    <Text style={styles.reviewInstitutionName}>
-                      {review.institution?.name || "기관"}
-                    </Text>
-                    <Text style={styles.reviewContent} numberOfLines={2}>
-                      {review.content}
-                    </Text>
-                    <View style={styles.reviewRating}>
-                      {Array.from({ length: review.rating || 0 }).map((_, i) => (
-                        <Ionicons
-                          key={i}
-                          name="star"
-                          size={14}
-                          color="#FFD700"
-                        />
-                      ))}
-                    </View>
-                  </TouchableOpacity>
+                  <View key={review.id} style={styles.reviewCard}>
+                    <TouchableOpacity
+                      style={styles.reviewContentArea}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/screen/ReviewWrite",
+                          params: {
+                            reviewId: review.id,
+                            institutionId: review.institution?.id,
+                            institutionName: review.institution?.name,
+                            reservationId: review.reservationId,
+                          },
+                        })
+                      }
+                    >
+                      <Text style={styles.reviewInstitutionName}>
+                        {review.institution?.name || "기관"}
+                      </Text>
+                      <Text style={styles.reviewContent} numberOfLines={2}>
+                        {review.content}
+                      </Text>
+                      <View style={styles.reviewRating}>
+                        {Array.from({ length: review.rating || 0 }).map((_, i) => (
+                          <Ionicons
+                            key={i}
+                            name="star"
+                            size={14}
+                            color="#FFD700"
+                          />
+                        ))}
+                      </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleDeleteReview(review.id)}
+                      style={styles.deleteButton}
+                    >
+                      <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                    </TouchableOpacity>
+                  </View>
                 ))}
               </View>
             )}
@@ -363,6 +400,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  reviewContentArea: {
+    flex: 1,
+  },
+  deleteButton: {
+    padding: 5,
+    marginLeft: 10,
   },
   reviewInstitutionName: {
     fontSize: 16,

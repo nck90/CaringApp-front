@@ -12,6 +12,7 @@ import {
 } from "react-native";
 
 import BottomTabBar from "../../components/BottomTabBar";
+import { getActiveAdvertisementsByType } from "../api/advertisement/public.api";
 import { getMyMemberDetail } from "../api/member/member.api";
 
 const { width } = Dimensions.get("window");
@@ -21,6 +22,7 @@ export default function Home() {
   const [seniorName, setSeniorName] = useState("님");
   const [guardianName, setGuardianName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [bannerAd, setBannerAd] = useState(null);
 
   const [loaded] = useAssets([
     require("../../assets/images/logo.png"),
@@ -55,7 +57,22 @@ export default function Home() {
       }
     };
 
+    const fetchBannerAd = async () => {
+      try {
+        const response = await getActiveAdvertisementsByType("MAIN_BANNER");
+        const data = response.data.data || response.data;
+        // 첫 번째 배너 광고 사용
+        if (Array.isArray(data) && data.length > 0) {
+          setBannerAd(data[0]);
+        }
+      } catch (error) {
+        console.log("Fetch banner ad error:", error);
+        // 에러 발생 시 배너 없음
+      }
+    };
+
     fetchUserInfo();
+    fetchBannerAd();
   }, []);
 
   if (!loaded || loading) {
@@ -87,7 +104,27 @@ export default function Home() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.bannerBox} />
+      {bannerAd ? (
+        <TouchableOpacity
+          style={styles.bannerBox}
+          onPress={() => {
+            if (bannerAd.institutionId) {
+              router.push({
+                pathname: "/screen/Institution",
+                params: { institutionId: bannerAd.institutionId },
+              });
+            }
+          }}
+        >
+          <Image
+            source={{ uri: bannerAd.bannerImageUrl }}
+            style={styles.bannerImage}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.bannerBox} />
+      )}
 
       <View style={styles.fixedContent}>
         <View style={styles.greetingBox}>
@@ -173,6 +210,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignSelf: "center",
     marginBottom: 17,
+    overflow: "hidden",
+  },
+  bannerImage: {
+    width: "100%",
+    height: "100%",
   },
 
   fixedContent: {

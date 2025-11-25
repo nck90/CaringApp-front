@@ -15,7 +15,6 @@ const api = axios.create({
   },
 });
 
-// 토큰 갱신 중인지 추적
 let isRefreshing = false;
 let failedQueue = [];
 
@@ -32,6 +31,22 @@ const processQueue = (error, token = null) => {
 
 api.interceptors.request.use(
   async (config) => {
+    config.metadata = { startTime: new Date() };
+
+    const timestamp = new Date().toISOString();
+    const method = config.method?.toUpperCase() || "GET";
+    const url = `${config.baseURL || ""}${config.url}`;
+    const params = config.params ? JSON.stringify(config.params) : "";
+    const data = config.data ? (typeof config.data === "string" ? config.data.substring(0, 100) : JSON.stringify(config.data).substring(0, 100)) : "";
+
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log(`📤 [API REQUEST] ${timestamp}`);
+    console.log(`   Method: ${method}`);
+    console.log(`   URL: ${url}`);
+    if (params) console.log(`   Params: ${params}`);
+    if (data) console.log(`   Data: ${data}...`);
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
     const noAuthNeeded = [
       "/auth/register",
       "/auth/login",
@@ -64,18 +79,71 @@ api.interceptors.request.use(
 
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log(`❌ [API REQUEST ERROR] ${new Date().toISOString()}`);
+    console.log(`   Error:`, error.message);
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    return Promise.reject(error);
+  }
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const endTime = new Date();
+    const startTime = response.config.metadata?.startTime;
+    const duration = startTime ? `${endTime - startTime}ms` : "N/A";
+
+    const timestamp = new Date().toISOString();
+    const method = response.config.method?.toUpperCase() || "GET";
+    const url = `${response.config.baseURL || ""}${response.config.url}`;
+    const status = response.status;
+    const statusText = response.statusText;
+
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log(`✅ [API RESPONSE] ${timestamp}`);
+    console.log(`   Method: ${method}`);
+    console.log(`   URL: ${url}`);
+    console.log(`   Status: ${status} ${statusText}`);
+    console.log(`   Duration: ${duration}`);
+    if (response.data) {
+      const dataPreview = typeof response.data === "string" 
+        ? response.data.substring(0, 150) 
+        : JSON.stringify(response.data).substring(0, 150);
+      console.log(`   Data: ${dataPreview}...`);
+    }
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+    return response;
+  },
   async (error) => {
+    const endTime = new Date();
+    const startTime = error.config?.metadata?.startTime;
+    const duration = startTime ? `${endTime - startTime}ms` : "N/A";
+
+    const timestamp = new Date().toISOString();
+    const method = error.config?.method?.toUpperCase() || "GET";
+    const url = error.config ? `${error.config.baseURL || ""}${error.config.url}` : "Unknown";
+    const status = error.response?.status || "N/A";
+    const statusText = error.response?.statusText || error.message;
+
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log(`❌ [API ERROR] ${timestamp}`);
+    console.log(`   Method: ${method}`);
+    console.log(`   URL: ${url}`);
+    console.log(`   Status: ${status} ${statusText}`);
+    console.log(`   Duration: ${duration}`);
+    if (error.response?.data) {
+      const errorData = typeof error.response.data === "string"
+        ? error.response.data.substring(0, 150)
+        : JSON.stringify(error.response.data).substring(0, 150);
+      console.log(`   Error Data: ${errorData}...`);
+    }
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     const originalRequest = error.config;
 
-    // 401 에러이고, 이미 재시도한 요청이 아닌 경우
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
-        // 이미 토큰 갱신 중이면 대기
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
@@ -97,7 +165,6 @@ api.interceptors.response.use(
           throw new Error("No refresh token");
         }
 
-        // 토큰 갱신 요청
         const response = await axios.post(
           `${api.defaults.baseURL}/auth/token/refresh`,
           {
@@ -122,7 +189,6 @@ api.interceptors.response.use(
         processQueue(refreshError, null);
         isRefreshing = false;
         
-        // 토큰 갱신 실패 시 로그아웃 처리
         await clearTokens();
         
         return Promise.reject(refreshError);
