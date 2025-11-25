@@ -232,17 +232,18 @@ export default function Institution() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.actionRight}
-              onPress={() =>
-                router.push(
-                  `/screen/CounselChat?name=${encodeURIComponent(
-                    institution.name
-                  )}`
-                )
-              }
-            >
-              <Text style={styles.actionRightText}>예약하기</Text>
-            </TouchableOpacity>
+  style={styles.actionRight}
+  onPress={() =>
+    router.push({
+      pathname: "/screen/Reservation",
+      params: {
+        name: institution.name,  
+      },
+    })
+  }
+>
+  <Text style={styles.actionRightText}>예약하기</Text>
+</TouchableOpacity>
           </View>
 
           <View style={{ height: 120 }} />

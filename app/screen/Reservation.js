@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -9,10 +9,8 @@ import {
     View,
 } from "react-native";
 
-// 요일 한글
 const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 
-// mock 날짜 1주
 const MOCK_DATES = [
   "2025-11-23",
   "2025-11-24",
@@ -23,285 +21,326 @@ const MOCK_DATES = [
   "2025-11-29",
 ];
 
-// mock time
-const MOCK_AM = [
-  { time: "09:00" },
-  { time: "09:30" },
-  { time: "10:00" },
-  { time: "10:30" },
-];
-
-const MOCK_PM = [
-  { time: "12:00" },
-  { time: "12:30" },
-  { time: "13:00" },
-  { time: "13:30" },
-  { time: "14:00" },
-];
+const MOCK_AM = ["09:00", "09:30", "10:00", "10:30"];
+const MOCK_PM = ["12:00", "12:30", "13:00", "13:30", "14:00"];
 
 export default function Reservation() {
   const router = useRouter();
-  const { institutionId } = useLocalSearchParams();
+  const { name, id } = useLocalSearchParams(); // 🔥 Institution에서 넘어온 id까지 받음
 
   const [selectedDate, setSelectedDate] = useState("2025-11-23");
   const [selectedTime, setSelectedTime] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
 
-  const getDay = (date) => {
-    const d = new Date(date);
-    return WEEKDAY[d.getDay()];
-  };
+  const getDay = (date) => WEEKDAY[new Date(date).getDay()];
+  const getDayNum = (date) => Number(date.split("-")[2]);
+  const isSunday = (date) => getDay(date) === "일";
 
-  const getDateNumber = (date) => {
-    return Number(date.split("-")[2]);
+  // 🔥 예약 완료 → ReservationClear로 모든 데이터 전달
+  const onSubmit = () => {
+    if (!(selectedDate && selectedTime && selectedType)) return;
+
+    router.replace({
+      pathname: "/screen/ReservationClear",
+      params: {
+        name: name || "기관명",
+        date: `${selectedDate} ${selectedTime}`,
+        mode: selectedType,
+      },
+    });
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+    <View style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity
+          onPress={() =>
+            router.replace({
+              pathname: "/screen/Institution",
+              params: { id: id },
+            })
+          }
+        >
           <Ionicons name="chevron-back" size={26} color="#162B40" />
         </TouchableOpacity>
+
         <Text style={styles.headerTitle}>예약하기</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} style={{ padding: 20 }}>
-        {/* 방문 희망일 */}
-        <Text style={styles.sectionTitle}>방문 희망일</Text>
-        <Text style={styles.monthText}>11월</Text>
+      {/* 방문 희망일 */}
+      <Text style={styles.sectionTitle}>예약 희망일</Text>
+      <Text style={styles.monthLabel}>11월</Text>
 
+      {/* 날짜 스크롤 */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={styles.dateRow}>
-          {MOCK_DATES.map((d) => (
-            <TouchableOpacity
-              key={d}
-              onPress={() => setSelectedDate(d)}
-              style={[
-                styles.dateBox,
-                selectedDate === d && styles.dateBoxSelected,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.dateWeek,
-                  selectedDate === d && styles.dateWeekSelected,
-                ]}
+          {MOCK_DATES.map((d) => {
+            const selected = selectedDate === d;
+            const sunday = isSunday(d);
+
+            return (
+              <TouchableOpacity
+                key={d}
+                onPress={() => setSelectedDate(d)}
+                style={[styles.dateBox, selected && styles.dateBoxSelected]}
               >
-                {getDay(d)}
-              </Text>
-              <Text
-                style={[
-                  styles.dateDay,
-                  selectedDate === d && styles.dateDaySelected,
-                ]}
-              >
-                {getDateNumber(d)}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.weekText,
+                    sunday && { color: "#FF7F50" },
+                    selected && styles.weekTextSelected,
+                  ]}
+                >
+                  {getDay(d)}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.dayText,
+                    sunday && { color: "#FF7F50" },
+                    selected && styles.dayTextSelected,
+                  ]}
+                >
+                  {getDayNum(d)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
+      </ScrollView>
 
-        {/* 방문 희망 시간 */}
-        <Text style={[styles.sectionTitle, { marginTop: 30 }]}>
-          방문 희망 시간
-        </Text>
+      {/* 구분선 */}
+      <View style={styles.divider} />
 
-        <Text style={styles.timeTitle}>오전</Text>
+      {/* 예약 희망 시간 */}
+      <Text style={[styles.sectionTitle, { marginTop: 18 }]}>
+        예약 희망 시간
+      </Text>
+
+      <Text style={styles.timeSubtitle}>오전</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={styles.timeRow}>
           {MOCK_AM.map((t) => (
             <TouchableOpacity
-              key={t.time}
-              onPress={() => setSelectedTime(t.time)}
-              style={[
-                styles.timeBox,
-                selectedTime === t.time && styles.timeSelected,
-              ]}
+              key={t}
+              onPress={() => setSelectedTime(t)}
+              style={[styles.timeBox, selectedTime === t && styles.timeSelected]}
             >
               <Text
                 style={[
                   styles.timeText,
-                  selectedTime === t.time && styles.timeTextSelected,
+                  selectedTime === t && styles.timeTextSelected,
                 ]}
               >
-                {t.time}
+                {t}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
+      </ScrollView>
 
-        <Text style={styles.timeTitle}>오후</Text>
+      <Text style={[styles.timeSubtitle, { marginTop: 6 }]}>오후</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={styles.timeRow}>
           {MOCK_PM.map((t) => (
             <TouchableOpacity
-              key={t.time}
-              onPress={() => setSelectedTime(t.time)}
-              style={[
-                styles.timeBox,
-                selectedTime === t.time && styles.timeSelected,
-              ]}
+              key={t}
+              onPress={() => setSelectedTime(t)}
+              style={[styles.timeBox, selectedTime === t && styles.timeSelected]}
             >
               <Text
                 style={[
                   styles.timeText,
-                  selectedTime === t.time && styles.timeTextSelected,
+                  selectedTime === t && styles.timeTextSelected,
                 ]}
               >
-                {t.time}
+                {t}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
-
-
-        {/* 예약 방식 */}
-        <Text style={[styles.sectionTitle, { marginTop: 35 }]}>예약 방식</Text>
-
-        <View style={styles.radioBox}>
-          <TouchableOpacity
-            style={styles.radioRow}
-            onPress={() => setSelectedType("입소")}
-          >
-            <View
-              style={[
-                styles.radioOuter,
-                selectedType === "입소" && styles.radioOuterActive,
-              ]}
-            >
-              {selectedType === "입소" && <View style={styles.radioInner} />}
-            </View>
-            <Text style={styles.radioLabel}>입소 예약</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.radioBox}>
-          <TouchableOpacity
-            style={styles.radioRow}
-            onPress={() => setSelectedType("방문")}
-          >
-            <View
-              style={[
-                styles.radioOuter,
-                selectedType === "방문" && styles.radioOuterActive,
-              ]}
-            >
-              {selectedType === "방문" && <View style={styles.radioInner} />}
-            </View>
-            <Text style={styles.radioLabel}>방문 상담 예약</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.radioBox}>
-          <TouchableOpacity
-            style={styles.radioRow}
-            onPress={() => setSelectedType("전화")}
-          >
-            <View
-              style={[
-                styles.radioOuter,
-                selectedType === "전화" && styles.radioOuterActive,
-              ]}
-            >
-              {selectedType === "전화" && <View style={styles.radioInner} />}
-            </View>
-            <Text style={styles.radioLabel}>전화 상담 예약</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* 예약 완료 버튼 */}
-        <TouchableOpacity
-          style={[
-            styles.submitBtn,
-            !(selectedDate && selectedTime && selectedType) &&
-              styles.submitDisabled,
-          ]}
-          disabled={!(selectedDate && selectedTime && selectedType)}
-        >
-          <Text style={styles.submitTxt}>예약 완료하기</Text>
-        </TouchableOpacity>
-
-        <View style={{ height: 70 }} />
       </ScrollView>
+
+      {/* 구분선 */}
+      <View style={styles.divider} />
+
+      {/* 예약 방식 */}
+      <Text style={[styles.sectionTitle, { marginTop: 18 }]}>
+        예약 방식
+      </Text>
+
+      {["입소 예약", "방문 상담 예약", "전화 상담 예약"].map((label) => (
+        <TouchableOpacity
+          key={label}
+          onPress={() => setSelectedType(label)}
+          style={[styles.radioBox, selectedType === label && styles.radioBoxSelected]}
+        >
+          <View
+            style={[
+              styles.radioOuter,
+              selectedType === label && styles.radioOuterSelected,
+            ]}
+          >
+            {selectedType === label && (
+              <MaterialIcons
+                name="check"
+                size={18}
+                color="#FFFFFF"
+                style={{ marginLeft: 0.5 }}
+              />
+            )}
+          </View>
+
+          <Text style={styles.radioLabel}>{label}</Text>
+        </TouchableOpacity>
+      ))}
+
+      {/* 예약 버튼 */}
+      <TouchableOpacity
+        onPress={onSubmit}
+        style={[
+          styles.submitBtn,
+          !(selectedDate && selectedTime && selectedType) &&
+            styles.submitDisabled,
+        ]}
+      >
+        <Text style={styles.submitText}>예약 완료하기</Text>
+      </TouchableOpacity>
+
+      <View style={{ height: 40 }} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F7F9FB",
+    paddingHorizontal: 20,
+  },
+
   header: {
-    flexDirection: "row",
-    alignItems: "center",
     paddingTop: 60,
     paddingBottom: 10,
-    paddingHorizontal: 15,
+    flexDirection: "row",
+    alignItems: "center",
   },
+
   headerTitle: {
-    fontSize: 22,
+    fontSize: 24,
     marginLeft: 5,
     color: "#162B40",
-    fontWeight: "600",
+    fontWeight: "700",
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: "#6B7B8C22",
+    marginTop: 30,
+    marginBottom: 10,
   },
 
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: "700",
     color: "#162B40",
-  },
-  monthText: {
-    marginTop: 5,
-    fontSize: 14,
-    color: "#8A8A8A",
-    marginBottom: 12,
+    marginTop: 30,
   },
 
-  dateRow: { flexDirection: "row", justifyContent: "space-between" },
+  monthLabel: {
+    color: "#8A8A8A",
+    marginVertical: 10,
+    fontSize: 16,
+  },
+
+  dateRow: { flexDirection: "row", gap: 12 },
+
   dateBox: {
-    width: 48,
-    height: 65,
-    backgroundColor: "#F7F9FB",
+    width: 50,
+    height: 68,
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
-  dateWeek: { color: "#A0A7AF", fontSize: 14 },
-  dateDay: { color: "#162B40", fontSize: 16, marginTop: 2 },
 
   dateBoxSelected: {
-    backgroundColor: "#FFF2EC",
+    backgroundColor: "#5DA7DB33",
+    borderWidth: 2,
+    borderColor: "#5DA7DB",
   },
-  dateWeekSelected: { color: "#FF7F50", fontWeight: "700" },
-  dateDaySelected: { color: "#FF7F50", fontWeight: "700" },
 
-  timeTitle: {
-    fontSize: 15,
-    color: "#8A8A8A",
+  weekText: {
+    fontSize: 17,
+    color: "#A3A9AE",
     marginBottom: 10,
-    marginTop: 20,
   },
+
+  weekTextSelected: { color: "#5DA7DB", fontWeight: "700" },
+
+  dayText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#162B40",
+  },
+
+  dayTextSelected: { color: "#5DA7DB" },
+
+  timeSubtitle: {
+    marginTop: 10,
+    marginBottom: 10,
+    color: "#7A8793",
+    fontSize: 16,
+  },
+
   timeRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 12,
   },
+
   timeBox: {
-    width: "23%",
-    backgroundColor: "#F7F9FB",
-    paddingVertical: 12,
+    width: 70,
+    height: 40,
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     alignItems: "center",
+    justifyContent: "center",
   },
-  timeSelected: { backgroundColor: "#EEF6FF" },
-  timeText: { color: "#36424A", fontSize: 14 },
-  timeTextSelected: { color: "#1A73E8", fontWeight: "700" },
+
+  timeSelected: {
+    backgroundColor: "#5DA7DB33",
+    borderColor: "#5DA7DB",
+    borderWidth: 2,
+  },
+
+  timeText: {
+    color: "#36424A",
+    fontSize: 17,
+  },
+
+  timeTextSelected: {
+    color: "#5DA7DB",
+    fontWeight: "700",
+    fontSize: 17,
+  },
 
   radioBox: {
-    backgroundColor: "#FFFFFF",
-    padding: 18,
-    borderRadius: 15,
-    marginBottom: 10,
-  },
-  radioRow: {
     flexDirection: "row",
     alignItems: "center",
+    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    marginTop: 10,
+    borderWidth: 2,
+    borderColor: "transparent",
   },
+
+  radioBoxSelected: {
+    backgroundColor: "#5DA7DB33",
+    borderColor: "#5DA7DB",
+  },
+
   radioOuter: {
     width: 22,
     height: 22,
@@ -312,31 +351,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 12,
   },
-  radioOuterActive: { borderColor: "#5DA7DB" },
-  radioInner: {
-    width: 10,
-    height: 10,
+
+  radioOuterSelected: {
+    borderColor: "#5DA7DB",
     backgroundColor: "#5DA7DB",
-    borderRadius: 5,
   },
+
   radioLabel: {
-    fontSize: 15,
+    fontSize: 17,
     color: "#162B40",
   },
 
   submitBtn: {
-    marginTop: 25,
+    marginTop: 30,
     backgroundColor: "#5DA7DB",
-    paddingVertical: 17,
-    borderRadius: 15,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: "center",
   },
+
   submitDisabled: {
-    backgroundColor: "#DDE6EF",
+    backgroundColor: "#C9DCEC",
   },
-  submitTxt: {
-    color: "#fff",
-    fontSize: 16,
+
+  submitText: {
+    color: "#FFF",
+    fontSize: 18,
     fontWeight: "700",
   },
 });
