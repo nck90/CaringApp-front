@@ -4,8 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
-import { getPreferenceTags } from "../api/member/member.api";
 import { getInstitutionList } from "../api/institution/profile.api";
+import { getPreferenceTags } from "../api/member/member.api";
 
 export default function RecommendStart() {
   const router = useRouter();

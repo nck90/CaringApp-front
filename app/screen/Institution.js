@@ -55,10 +55,23 @@ export default function Institution() {
 
         try {
           const counselResponse = await getCounselList(institutionId);
-          const counselData = counselResponse.data.data || counselResponse.data;
-          setCounsels(Array.isArray(counselData) ? counselData : []);
+          console.log("Counsel API response in Institution:", JSON.stringify(counselResponse.data, null, 2));
+          
+          let counselData = counselResponse.data?.data || counselResponse.data;
+          
+          if (Array.isArray(counselData)) {
+            setCounsels(counselData);
+          } else if (counselData && Array.isArray(counselData.content)) {
+            setCounsels(counselData.content);
+          } else if (counselData && Array.isArray(counselData.counsels)) {
+            setCounsels(counselData.counsels);
+          } else {
+            console.log("Unexpected counsel data format:", counselData);
+            setCounsels([]);
+          }
         } catch (error) {
           console.log("Counsel list error:", error);
+          console.log("Error details:", error.response?.data || error.message);
           setCounsels([]);
         }
 

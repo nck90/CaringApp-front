@@ -11,9 +11,9 @@ import {
   View,
 } from "react-native";
 
-import { createMemberReservation } from "../api/member/reservation.api";
-import { getCounselList, getCounselAvailableTimes } from "../api/institution/counsel.api";
 import { getMyElderlyProfiles } from "../api/elderly/elderly.api";
+import { getCounselAvailableTimes, getCounselList } from "../api/institution/counsel.api";
+import { createMemberReservation } from "../api/member/reservation.api";
 
 const { width } = Dimensions.get("window");
 
@@ -31,6 +31,7 @@ export default function Reservation() {
   const [elderlyProfiles, setElderlyProfiles] = useState([]);
   const [selectedElderly, setSelectedElderly] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingCounsels, setLoadingCounsels] = useState(true);
 
   useEffect(() => {
     fetchCounsels();
@@ -38,13 +39,34 @@ export default function Reservation() {
   }, [institutionId]);
 
   const fetchCounsels = async () => {
-    if (!institutionId) return;
+    if (!institutionId) {
+      setLoadingCounsels(false);
+      return;
+    }
+    setLoadingCounsels(true);
     try {
       const response = await getCounselList(institutionId);
-      const data = response.data.data || response.data;
-      setCounsels(Array.isArray(data) ? data : []);
+      console.log("Counsel API response:", JSON.stringify(response.data, null, 2));
+      
+      let data = response.data?.data || response.data;
+      
+      if (Array.isArray(data)) {
+        setCounsels(data);
+      } else if (data && Array.isArray(data.content)) {
+        setCounsels(data.content);
+      } else if (data && Array.isArray(data.counsels)) {
+        setCounsels(data.counsels);
+      } else {
+        console.log("Unexpected counsel data format:", data);
+        setCounsels([]);
+      }
     } catch (error) {
       console.log("Fetch counsels error:", error);
+      console.log("Error details:", error.response?.data || error.message);
+      Alert.alert("오류", "상담 서비스 목록을 불러오는데 실패했습니다.");
+      setCounsels([]);
+    } finally {
+      setLoadingCounsels(false);
     }
   };
 
@@ -154,8 +176,16 @@ export default function Reservation() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>상담 서비스 선택</Text>
-          {counsels.length === 0 ? (
-            <Text style={styles.emptyText}>예약 가능한 상담 서비스가 없습니다.</Text>
+          {loadingCounsels ? (
+            <Text style={styles.emptyText}>상담 서비스를 불러오는 중...</Text>
+          ) : counsels.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>예약 가능한 상담 서비스가 없습니다.</Text>
+              <Text style={styles.emptySubtext}>
+                해당 기관에 등록된 상담 서비스가 없거나{'\n'}
+                현재 예약이 불가능한 상태입니다.
+              </Text>
+            </View>
           ) : (
             counsels.map((counsel) => (
               <TouchableOpacity
@@ -423,11 +453,22 @@ const styles = StyleSheet.create({
     color: "#5DA7DB",
     fontWeight: "600",
   },
+  emptyContainer: {
+    paddingVertical: 30,
+    alignItems: "center",
+  },
   emptyText: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#6B7B8C",
     textAlign: "center",
-    paddingVertical: 20,
+    marginBottom: 8,
+    fontWeight: "500",
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: "#9CA3AF",
+    textAlign: "center",
+    lineHeight: 20,
   },
   reservationButton: {
     backgroundColor: "#5DA7DB",
@@ -442,3 +483,4 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+
