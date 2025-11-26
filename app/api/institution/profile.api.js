@@ -80,21 +80,20 @@ export const deleteInstitution = (institutionId) => {
   return apiClient.delete(`/institutions/profile/${institutionId}`);
 };
 
-// --------------------------------------------------
-// 6. 기관 입소 가능 여부 변경
-//     (PUT /api/v1/institutions/profile/{institutionId}/admission?isAdmissionAvailable=)
-// --------------------------------------------------
 export const updateAdmissionStatus = (institutionId, isAdmissionAvailable) => {
-  return apiClient.put(`/institutions/profile/${institutionId}/admission`, null, {
+  return apiClient.patch(`/institutions/profile/${institutionId}/admission-availability`, null, {
     params: {
       isAdmissionAvailable,
     },
   });
 };
 
-// --------------------------------------------------
-// 7. 기관 승인 (PUT /api/v1/institutions/profile/{institutionId}/approve)
-// --------------------------------------------------
 export const approveInstitution = (institutionId) => {
-  return apiClient.put(`/institutions/profile/${institutionId}/approve`);
+  return apiClient.patch(`/institutions/profile/${institutionId}/approval`);
+};
+
+export const setInstitutionTags = (institutionId, tagIds) => {
+  return apiClient.put(`/institutions/profile/${institutionId}/tags`, {
+    tagIds,
+  });
 };

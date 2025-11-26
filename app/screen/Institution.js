@@ -2,89 +2,156 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    Dimensions,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import BottomTabBar from "../../components/BottomTabBar";
+import { getCaregiverList } from "../api/caregiver/caregiver.api";
+import { startChat } from "../api/chat/chat.api";
+import { getCounselList } from "../api/institution/counsel.api";
+import { getInstitutionDetail } from "../api/institution/profile.api";
+import { getInstitutionReviews } from "../api/institution/review.api";
+import { reportReview } from "../api/review/review.api";
 
 const { width } = Dimensions.get("window");
 
 export default function Institution() {
   const router = useRouter();
-  const { id, keyword } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const institutionId = params.institutionId || params.id;
 
   const [institution, setInstitution] = useState(null);
   const [caregivers, setCaregivers] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [counsels, setCounsels] = useState([]);
   const [expanded, setExpanded] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const getInstitutionTypeLabel = (type) => {
+    const typeMap = {
+      DAY_CARE_CENTER: "데이케어센터",
+      NURSING_HOME: "요양원",
+      HOME_CARE_SERVICE: "재가 돌봄 서비스",
+    };
+    return typeMap[type] || type;
+  };
+
+  const handleReportReview = async (reviewId) => {
+    Alert.alert(
+      "리뷰 신고",
+      "이 리뷰를 신고하시겠습니까?",
+      [
+        {
+          text: "취소",
+          style: "cancel",
+        },
+        {
+          text: "신고",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await reportReview(reviewId, {
+                reportReason: "SPAM",
+                description: "부적절한 리뷰로 신고합니다.",
+              });
+              Alert.alert("신고 완료", "리뷰가 신고되었습니다.");
+            } catch (error) {
+              console.log("Report review error:", error);
+              const errorMessage =
+                error.response?.data?.message || "리뷰 신고에 실패했습니다.";
+              Alert.alert("오류", errorMessage);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   useEffect(() => {
-    const mockInstitution = {
-      name: "사랑재 요양원",
-      institutionType: "NURSING_HOME",
-      isAdmissionAvailable: true,
-      address: {
-        city: "서울시 광진구",
-        street: "자양로188",
-      },
-      specializedConditions: ["치매", "청결"], 
-      priceInfo: {
-        monthlyBaseFee: 1200000,
-      },
+    const fetchInstitutionData = async () => {
+      if (!institutionId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const detailResponse = await getInstitutionDetail(institutionId);
+        const detailData = detailResponse.data.data || detailResponse.data;
+        setInstitution(detailData);
+
+        try {
+          const counselResponse = await getCounselList(institutionId);
+          console.log("Counsel API response in Institution:", JSON.stringify(counselResponse.data, null, 2));
+          
+          let counselData = counselResponse.data?.data || counselResponse.data;
+          
+          if (Array.isArray(counselData)) {
+            setCounsels(counselData);
+          } else if (counselData && Array.isArray(counselData.content)) {
+            setCounsels(counselData.content);
+          } else if (counselData && Array.isArray(counselData.counsels)) {
+            setCounsels(counselData.counsels);
+          } else {
+            console.log("Unexpected counsel data format:", counselData);
+            setCounsels([]);
+          }
+        } catch (error) {
+          console.log("Counsel list error:", error);
+          console.log("Error details:", error.response?.data || error.message);
+          setCounsels([]);
+        }
+
+        try {
+          const reviewResponse = await getInstitutionReviews(institutionId);
+          const reviewData = reviewResponse.data.data || reviewResponse.data;
+          setReviews(reviewData.content || reviewData.reviews || []);
+        } catch (error) {
+          console.log("Review list error:", error);
+          setReviews([]);
+        }
+
+        try {
+          const caregiverResponse = await getCaregiverList(institutionId);
+          const caregiverData = caregiverResponse.data.data || caregiverResponse.data;
+          setCaregivers(Array.isArray(caregiverData) ? caregiverData : []);
+        } catch (error) {
+          console.log("Caregiver list error:", error);
+          setCaregivers([]);
+        }
+      } catch (error) {
+        console.log("Fetch institution error:", error);
+        Alert.alert("오류", "기관 정보를 불러오는데 실패했습니다.");
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const mockCaregivers = [
-      {
-        id: 1,
-        name: "김미정",
-        experienceDetails: "경력 10년",
-        photoUrl:
-          "https://cdn.pixabay.com/photo/2021/08/01/19/16/woman-6512419_1280.jpg",
-      },
-      {
-        id: 2,
-        name: "박지은",
-        experienceDetails: "경력 7년",
-        photoUrl:
-          "https://cdn.pixabay.com/photo/2019/11/29/02/02/architecture-1867426_1280.jpg",
-      },
-    ];
-    const mockReviews = [
-      {
-        id: 1,
-        member: { name: "이**" },
-        rating: 4,
-        content: "친절하고 좋아요!",
-        tags: [
-          { id: 1, name: "청결함" },
-          { id: 2, name: "서비스" },
-          { id: 3, name: "친절" },
-        ],
-      },
-      {
-        id: 2,
-        member: { name: "윤**" },
-        rating: 5,
-        content: "세심히 케어해주고 좋습니다.",
-        tags: [
-          { id: 1, name: "청결함" },
-          { id: 2, name: "시설" },
-        ],
-      },
-    ];
+    fetchInstitutionData();
+  }, [institutionId]);
 
-    setInstitution(mockInstitution);
-    setCaregivers(mockCaregivers);
-    setReviews(mockReviews);
-  }, [id]);
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color="#5DA7DB" />
+      </View>
+    );
+  }
 
-  if (!institution) return null;
+  if (!institution) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <Text style={{ color: "#6B7B8C" }}>기관 정보를 불러올 수 없습니다.</Text>
+      </View>
+    );
+  }
 
   const visibleReviews = expanded ? reviews : reviews.slice(0, 2);
 
@@ -92,9 +159,7 @@ export default function Institution() {
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() =>
-          router.push(`/screen/InstitutionResult?keyword=${keyword}`)
-        }
+        onPress={() => router.back()}
       >
         <Ionicons name="chevron-back" size={26} color="#FFFFFF" />
       </TouchableOpacity>
@@ -111,13 +176,7 @@ export default function Institution() {
         <View style={styles.contentBox}>
           {/* 기관 타입 */}
           <Text style={styles.typeText}>
-            {institution.institutionType === "NURSING_HOME"
-              ? "요양원"
-              : institution.institutionType === "DAY_CARE_CENTER"
-              ? "데이케어센터"
-              : institution.institutionType === "HOME_CARE_SERVICE"
-              ? "재가 돌봄"
-              : "기관"}
+            {getInstitutionTypeLabel(institution.institutionType)}
           </Text>
 
           {/* 기관명 */}
@@ -166,16 +225,31 @@ export default function Institution() {
           {/* 직원 정보 */}
           <Text style={styles.sectionTitle}>직원 정보</Text>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {caregivers.map((c) => (
-              <View key={c.id} style={styles.staffCard}>
-                <Image source={{ uri: c.photoUrl }} style={styles.staffImage} />
-                <Text style={styles.staffName}>{c.name}</Text>
-                <Text style={styles.staffDetail}>{c.experienceDetails}</Text>
-                <Text style={styles.staffDetail}>자격증 보유</Text>
-              </View>
-            ))}
-          </ScrollView>
+          {caregivers.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>등록된 요양보호사가 없습니다.</Text>
+            </View>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {caregivers.map((c) => (
+                <View key={c.id} style={styles.staffCard}>
+                  {c.photoUrl ? (
+                    <Image source={{ uri: c.photoUrl }} style={styles.staffImage} />
+                  ) : (
+                    <View style={[styles.staffImage, styles.staffImagePlaceholder]}>
+                      <Ionicons name="person" size={40} color="#9CA3AF" />
+                    </View>
+                  )}
+                  <Text style={styles.staffName}>{c.name}</Text>
+                  {c.experienceDetails && (
+                    <Text style={styles.staffDetail} numberOfLines={2}>
+                      {c.experienceDetails}
+                    </Text>
+                  )}
+                </View>
+              ))}
+            </ScrollView>
+          )}
 
           {/* 리뷰 */}
           <Text style={styles.sectionTitle}>
@@ -185,25 +259,32 @@ export default function Institution() {
           {visibleReviews.map((r) => (
             <View key={r.id} style={styles.reviewCard}>
               <View style={styles.reviewHeader}>
-                <Text style={styles.reviewName}>{r.member.name}</Text>
-
-                <View style={{ flexDirection: "row", marginLeft: 6 }}>
-                  {Array.from({ length: r.rating }).map((_, i) => (
-                    <Ionicons
-                      key={`filled-${i}`}
-                      name="star"
-                      size={16}
-                      color="#FFD700"
-                      style={{ marginLeft: 2 }}
-                    />
-                  ))}
+                <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+                  <Text style={styles.reviewName}>{r.member.name}</Text>
+                  <View style={{ flexDirection: "row", marginLeft: 6 }}>
+                    {Array.from({ length: r.rating }).map((_, i) => (
+                      <Ionicons
+                        key={`filled-${i}`}
+                        name="star"
+                        size={16}
+                        color="#FFD700"
+                        style={{ marginLeft: 2 }}
+                      />
+                    ))}
+                  </View>
                 </View>
+                <TouchableOpacity
+                  onPress={() => handleReportReview(r.id)}
+                  style={styles.reportButton}
+                >
+                  <Ionicons name="flag-outline" size={18} color="#9CA3AF" />
+                </TouchableOpacity>
               </View>
 
               <Text style={styles.reviewContent}>{r.content}</Text>
 
               <View style={styles.reviewTagRow}>
-                {r.tags.map((t) => (
+                {r.tags && r.tags.map((t) => (
                   <View key={t.id} style={styles.reviewTagBox}>
                     <Text style={styles.reviewTagText}>{t.name}</Text>
                   </View>
@@ -226,24 +307,58 @@ export default function Institution() {
           <View style={styles.actionRow}>
             <TouchableOpacity
               style={styles.actionLeft}
-              onPress={() => router.push("/screen/CounselChat")}
+              onPress={async () => {
+                if (counsels.length === 0) {
+                  Alert.alert("안내", "현재 상담 가능한 서비스가 없습니다.");
+                  return;
+                }
+                
+                try {
+                  const firstCounsel = counsels[0];
+                  const response = await startChat({
+                    institutionId: parseInt(institutionId),
+                    counselId: firstCounsel.id,
+                  });
+                  
+                  const chatData = response.data.data;
+                  router.push({
+                    pathname: "/screen/CounselChat",
+                    params: {
+                      id: chatData.chatRoomId,
+                      name: institution.name,
+                      chatRoomId: chatData.chatRoomId,
+                    },
+                  });
+                } catch (error) {
+                  console.log("Start chat error:", error);
+                  Alert.alert(
+                    "오류",
+                    error.response?.data?.message || "상담을 시작하는데 실패했습니다."
+                  );
+                }
+              }}
             >
               <Text style={styles.actionLeftText}>상담하기</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-  style={styles.actionRight}
-  onPress={() =>
-    router.push({
-      pathname: "/screen/Reservation",
-      params: {
-        name: institution.name,  
-      },
-    })
-  }
->
-  <Text style={styles.actionRightText}>예약하기</Text>
-</TouchableOpacity>
+              style={styles.actionRight}
+              onPress={() => {
+                if (counsels.length === 0) {
+                  Alert.alert("안내", "현재 예약 가능한 상담 서비스가 없습니다.");
+                  return;
+                }
+                router.push({
+                  pathname: "/screen/Reservation",
+                  params: {
+                    institutionId: institutionId,
+                    institutionName: institution.name,
+                  },
+                });
+              }}
+            >
+              <Text style={styles.actionRightText}>예약하기</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={{ height: 120 }} />
@@ -386,6 +501,10 @@ const styles = StyleSheet.create({
   reviewHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+  },
+  reportButton: {
+    padding: 5,
   },
 
   reviewName: {
@@ -470,5 +589,20 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#FFFFFF",
+  },
+  emptyCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#9CA3AF",
+  },
+  staffImagePlaceholder: {
+    backgroundColor: "#F7F9FB",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

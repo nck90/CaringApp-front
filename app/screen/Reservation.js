@@ -1,214 +1,332 @@
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
-const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
+import { getMyElderlyProfiles } from "../api/elderly/elderly.api";
+import { getCounselAvailableTimes, getCounselList } from "../api/institution/counsel.api";
+import { createMemberReservation } from "../api/member/reservation.api";
 
-const MOCK_DATES = [
-  "2025-11-23",
-  "2025-11-24",
-  "2025-11-25",
-  "2025-11-26",
-  "2025-11-27",
-  "2025-11-28",
-  "2025-11-29",
-];
-
-const MOCK_AM = ["09:00", "09:30", "10:00", "10:30"];
-const MOCK_PM = ["12:00", "12:30", "13:00", "13:30", "14:00"];
+const { width } = Dimensions.get("window");
 
 export default function Reservation() {
   const router = useRouter();
-  const { name, id } = useLocalSearchParams(); // 🔥 Institution에서 넘어온 id까지 받음
+  const params = useLocalSearchParams();
+  const institutionId = params.institutionId;
+  const institutionName = params.institutionName;
 
-  const [selectedDate, setSelectedDate] = useState("2025-11-23");
+  const [counsels, setCounsels] = useState([]);
+  const [selectedCounsel, setSelectedCounsel] = useState(null);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [availableTimes, setAvailableTimes] = useState([]);
   const [selectedTime, setSelectedTime] = useState(null);
-  const [selectedType, setSelectedType] = useState(null);
+  const [elderlyProfiles, setElderlyProfiles] = useState([]);
+  const [selectedElderly, setSelectedElderly] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingCounsels, setLoadingCounsels] = useState(true);
 
-  const getDay = (date) => WEEKDAY[new Date(date).getDay()];
-  const getDayNum = (date) => Number(date.split("-")[2]);
-  const isSunday = (date) => getDay(date) === "일";
+  useEffect(() => {
+    fetchCounsels();
+    fetchElderlyProfiles();
+  }, [institutionId]);
 
-  // 🔥 예약 완료 → ReservationClear로 모든 데이터 전달
-  const onSubmit = () => {
-    if (!(selectedDate && selectedTime && selectedType)) return;
-
-    router.replace({
-      pathname: "/screen/ReservationClear",
-      params: {
-        name: name || "기관명",
-        date: `${selectedDate} ${selectedTime}`,
-        mode: selectedType,
-      },
-    });
+  const fetchCounsels = async () => {
+    if (!institutionId) {
+      setLoadingCounsels(false);
+      return;
+    }
+    setLoadingCounsels(true);
+    try {
+      const response = await getCounselList(institutionId);
+      console.log("Counsel API response:", JSON.stringify(response.data, null, 2));
+      
+      let data = response.data?.data || response.data;
+      
+      if (Array.isArray(data)) {
+        setCounsels(data);
+      } else if (data && Array.isArray(data.content)) {
+        setCounsels(data.content);
+      } else if (data && Array.isArray(data.counsels)) {
+        setCounsels(data.counsels);
+      } else {
+        console.log("Unexpected counsel data format:", data);
+        setCounsels([]);
+      }
+    } catch (error) {
+      console.log("Fetch counsels error:", error);
+      console.log("Error details:", error.response?.data || error.message);
+      Alert.alert("오류", "상담 서비스 목록을 불러오는데 실패했습니다.");
+      setCounsels([]);
+    } finally {
+      setLoadingCounsels(false);
+    }
   };
+
+  const fetchElderlyProfiles = async () => {
+    try {
+      const response = await getMyElderlyProfiles();
+      const data = response.data.data || response.data;
+      setElderlyProfiles(data.profiles || []);
+    } catch (error) {
+      console.log("Fetch elderly profiles error:", error);
+    }
+  };
+
+  const handleDateSelect = async (date) => {
+    if (!selectedCounsel) {
+      Alert.alert("안내", "상담 서비스를 먼저 선택해주세요.");
+      return;
+    }
+
+    setSelectedDate(date);
+    setSelectedTime(null);
+    setLoading(true);
+
+    try {
+      const response = await getCounselAvailableTimes(
+        institutionId,
+        selectedCounsel.id,
+        date
+      );
+      const data = response.data.data || response.data;
+      setAvailableTimes(data.timeSlots || []);
+    } catch (error) {
+      console.log("Fetch available times error:", error);
+      Alert.alert("오류", "예약 가능 시간을 불러오는데 실패했습니다.");
+      setAvailableTimes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReservation = async () => {
+    if (!selectedCounsel || !selectedDate || !selectedTime || !selectedElderly) {
+      Alert.alert("입력 오류", "모든 항목을 선택해주세요.");
+      return;
+    }
+
+    try {
+      const payload = {
+        counselId: selectedCounsel.id,
+        reservationDate: selectedDate,
+        slotIndex: selectedTime.slotIndex,
+        startTime: selectedTime.startTime,
+        endTime: selectedTime.endTime,
+        elderlyProfileId: selectedElderly.id,
+      };
+
+      await createMemberReservation(payload);
+
+      router.push({
+        pathname: "/screen/ReservationClear",
+        params: {
+          name: institutionName,
+          date: `${selectedDate} ${selectedTime.startTime}`,
+        },
+      });
+    } catch (error) {
+      console.log("Create reservation error:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        "예약 생성에 실패했습니다. 다시 시도해주세요.";
+      Alert.alert("예약 실패", errorMessage);
+    }
+  };
+
+  const generateDates = () => {
+    const dates = [];
+    const today = new Date();
+    for (let i = 0; i < 30; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dateStr = date.toISOString().split("T")[0];
+      const dayName = ["일", "월", "화", "수", "목", "금", "토"][date.getDay()];
+      dates.push({
+        date: dateStr,
+        day: date.getDate(),
+        dayName,
+        month: date.getMonth() + 1,
+      });
+    }
+    return dates;
+  };
+
+  const dates = generateDates();
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() =>
-            router.replace({
-              pathname: "/screen/Institution",
-              params: { id: id },
-            })
-          }
+          style={styles.backButton}
+          onPress={() => router.back()}
         >
           <Ionicons name="chevron-back" size={26} color="#162B40" />
         </TouchableOpacity>
-
         <Text style={styles.headerTitle}>예약하기</Text>
       </View>
 
-      {/* 방문 희망일 */}
-      <Text style={styles.sectionTitle}>예약 희망일</Text>
-      <Text style={styles.monthLabel}>11월</Text>
-
-      {/* 날짜 스크롤 */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.dateRow}>
-          {MOCK_DATES.map((d) => {
-            const selected = selectedDate === d;
-            const sunday = isSunday(d);
-
-            return (
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>상담 서비스 선택</Text>
+          {loadingCounsels ? (
+            <Text style={styles.emptyText}>상담 서비스를 불러오는 중...</Text>
+          ) : counsels.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>예약 가능한 상담 서비스가 없습니다.</Text>
+              <Text style={styles.emptySubtext}>
+                해당 기관에 등록된 상담 서비스가 없거나{'\n'}
+                현재 예약이 불가능한 상태입니다.
+              </Text>
+            </View>
+          ) : (
+            counsels.map((counsel) => (
               <TouchableOpacity
-                key={d}
-                onPress={() => setSelectedDate(d)}
-                style={[styles.dateBox, selected && styles.dateBoxSelected]}
+                key={counsel.id}
+                style={[
+                  styles.optionCard,
+                  selectedCounsel?.id === counsel.id && styles.optionCardSelected,
+                ]}
+                onPress={() => {
+                  setSelectedCounsel(counsel);
+                  setSelectedDate("");
+                  setSelectedTime(null);
+                  setAvailableTimes([]);
+                }}
               >
-                <Text
-                  style={[
-                    styles.weekText,
-                    sunday && { color: "#FF7F50" },
-                    selected && styles.weekTextSelected,
-                  ]}
-                >
-                  {getDay(d)}
-                </Text>
-
-                <Text
-                  style={[
-                    styles.dayText,
-                    sunday && { color: "#FF7F50" },
-                    selected && styles.dayTextSelected,
-                  ]}
-                >
-                  {getDayNum(d)}
-                </Text>
+                <Text style={styles.optionTitle}>{counsel.title}</Text>
+                {counsel.description && (
+                  <Text style={styles.optionDescription}>{counsel.description}</Text>
+                )}
               </TouchableOpacity>
-            );
-          })}
+            ))
+          )}
         </View>
-      </ScrollView>
 
-      {/* 구분선 */}
-      <View style={styles.divider} />
+        {selectedCounsel && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>날짜 선택</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {dates.map((item) => {
+                const isSelected = selectedDate === item.date;
+                return (
+                  <TouchableOpacity
+                    key={item.date}
+                    style={[
+                      styles.dateCard,
+                      isSelected && styles.dateCardSelected,
+                    ]}
+                    onPress={() => handleDateSelect(item.date)}
+                  >
+                    <Text
+                      style={[
+                        styles.dateDayName,
+                        isSelected && styles.dateDayNameSelected,
+                      ]}
+                    >
+                      {item.dayName}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.dateDay,
+                        isSelected && styles.dateDaySelected,
+                      ]}
+                    >
+                      {item.day}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
 
-      {/* 예약 희망 시간 */}
-      <Text style={[styles.sectionTitle, { marginTop: 18 }]}>
-        예약 희망 시간
-      </Text>
-
-      <Text style={styles.timeSubtitle}>오전</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.timeRow}>
-          {MOCK_AM.map((t) => (
-            <TouchableOpacity
-              key={t}
-              onPress={() => setSelectedTime(t)}
-              style={[styles.timeBox, selectedTime === t && styles.timeSelected]}
-            >
-              <Text
-                style={[
-                  styles.timeText,
-                  selectedTime === t && styles.timeTextSelected,
-                ]}
-              >
-                {t}
+        {selectedDate && availableTimes.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>시간 선택</Text>
+            <View style={styles.timeGrid}>
+              {availableTimes
+                .filter((slot) => slot.isAvailable)
+                .map((slot) => {
+                  const isSelected =
+                    selectedTime?.slotIndex === slot.slotIndex;
+                  return (
+                    <TouchableOpacity
+                      key={slot.slotIndex}
+                      style={[
+                        styles.timeCard,
+                        isSelected && styles.timeCardSelected,
+                      ]}
+                      onPress={() => setSelectedTime(slot)}
+                    >
+                      <Text
+                        style={[
+                          styles.timeText,
+                          isSelected && styles.timeTextSelected,
+                        ]}
+                      >
+                        {slot.timeRange || `${slot.startTime}-${slot.endTime}`}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+            </View>
+            {availableTimes.filter((slot) => slot.isAvailable).length === 0 && (
+              <Text style={styles.emptyText}>
+                선택한 날짜에 예약 가능한 시간이 없습니다.
               </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
-
-      <Text style={[styles.timeSubtitle, { marginTop: 6 }]}>오후</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.timeRow}>
-          {MOCK_PM.map((t) => (
-            <TouchableOpacity
-              key={t}
-              onPress={() => setSelectedTime(t)}
-              style={[styles.timeBox, selectedTime === t && styles.timeSelected]}
-            >
-              <Text
-                style={[
-                  styles.timeText,
-                  selectedTime === t && styles.timeTextSelected,
-                ]}
-              >
-                {t}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
-
-      {/* 구분선 */}
-      <View style={styles.divider} />
-
-      {/* 예약 방식 */}
-      <Text style={[styles.sectionTitle, { marginTop: 18 }]}>
-        예약 방식
-      </Text>
-
-      {["입소 예약", "방문 상담 예약", "전화 상담 예약"].map((label) => (
-        <TouchableOpacity
-          key={label}
-          onPress={() => setSelectedType(label)}
-          style={[styles.radioBox, selectedType === label && styles.radioBoxSelected]}
-        >
-          <View
-            style={[
-              styles.radioOuter,
-              selectedType === label && styles.radioOuterSelected,
-            ]}
-          >
-            {selectedType === label && (
-              <MaterialIcons
-                name="check"
-                size={18}
-                color="#FFFFFF"
-                style={{ marginLeft: 0.5 }}
-              />
             )}
           </View>
+        )}
 
-          <Text style={styles.radioLabel}>{label}</Text>
-        </TouchableOpacity>
-      ))}
+        {selectedTime && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>어르신 선택</Text>
+            {elderlyProfiles.length === 0 ? (
+              <Text style={styles.emptyText}>
+                등록된 어르신 프로필이 없습니다.
+              </Text>
+            ) : (
+              elderlyProfiles.map((profile) => {
+                const isSelected = selectedElderly?.id === profile.id;
+                return (
+                  <TouchableOpacity
+                    key={profile.id}
+                    style={[
+                      styles.optionCard,
+                      isSelected && styles.optionCardSelected,
+                    ]}
+                    onPress={() => setSelectedElderly(profile)}
+                  >
+                    <Text style={styles.optionTitle}>{profile.name}</Text>
+                    <Text style={styles.optionDescription}>
+                      생년월일: {profile.birthDate}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })
+            )}
+          </View>
+        )}
 
-      {/* 예약 버튼 */}
-      <TouchableOpacity
-        onPress={onSubmit}
-        style={[
-          styles.submitBtn,
-          !(selectedDate && selectedTime && selectedType) &&
-            styles.submitDisabled,
-        ]}
-      >
-        <Text style={styles.submitText}>예약 완료하기</Text>
-      </TouchableOpacity>
+        {selectedCounsel && selectedDate && selectedTime && selectedElderly && (
+          <TouchableOpacity
+            style={styles.reservationButton}
+            onPress={handleReservation}
+          >
+            <Text style={styles.reservationButtonText}>예약하기</Text>
+          </TouchableOpacity>
+        )}
 
-      <View style={{ height: 40 }} />
+        <View style={{ height: 100 }} />
+      </ScrollView>
     </View>
   );
 }
@@ -217,166 +335,152 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F7F9FB",
-    paddingHorizontal: 20,
   },
-
   header: {
-    paddingTop: 60,
-    paddingBottom: 10,
     flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
   },
-
+  backButton: {
+    marginRight: 10,
+  },
   headerTitle: {
     fontSize: 24,
-    marginLeft: 5,
-    color: "#162B40",
     fontWeight: "700",
+    color: "#162B40",
   },
-
-  divider: {
-    height: 1,
-    backgroundColor: "#6B7B8C22",
-    marginTop: 30,
-    marginBottom: 10,
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
-
+  section: {
+    marginBottom: 30,
+  },
   sectionTitle: {
-    fontSize: 19,
-    fontWeight: "700",
-    color: "#162B40",
-    marginTop: 30,
-  },
-
-  monthLabel: {
-    color: "#8A8A8A",
-    marginVertical: 10,
-    fontSize: 16,
-  },
-
-  dateRow: { flexDirection: "row", gap: 12 },
-
-  dateBox: {
-    width: 50,
-    height: 68,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  dateBoxSelected: {
-    backgroundColor: "#5DA7DB33",
-    borderWidth: 2,
-    borderColor: "#5DA7DB",
-  },
-
-  weekText: {
-    fontSize: 17,
-    color: "#A3A9AE",
-    marginBottom: 10,
-  },
-
-  weekTextSelected: { color: "#5DA7DB", fontWeight: "700" },
-
-  dayText: {
     fontSize: 18,
+    fontWeight: "600",
+    color: "#162B40",
+    marginBottom: 15,
+  },
+  optionCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  optionCardSelected: {
+    borderColor: "#5DA7DB",
+    borderWidth: 2,
+    backgroundColor: "#F0F8FF",
+  },
+  optionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#162B40",
+    marginBottom: 4,
+  },
+  optionDescription: {
+    fontSize: 14,
+    color: "#6B7B8C",
+  },
+  dateCard: {
+    width: 70,
+    height: 80,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    marginRight: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  dateCardSelected: {
+    borderColor: "#5DA7DB",
+    borderWidth: 2,
+    backgroundColor: "#F0F8FF",
+  },
+  dateDayName: {
+    fontSize: 14,
+    color: "#6B7B8C",
+    marginBottom: 4,
+  },
+  dateDayNameSelected: {
+    color: "#5DA7DB",
+    fontWeight: "600",
+  },
+  dateDay: {
+    fontSize: 20,
     fontWeight: "700",
     color: "#162B40",
   },
-
-  dayTextSelected: { color: "#5DA7DB" },
-
-  timeSubtitle: {
-    marginTop: 10,
-    marginBottom: 10,
-    color: "#7A8793",
-    fontSize: 16,
+  dateDaySelected: {
+    color: "#5DA7DB",
   },
-
-  timeRow: {
+  timeGrid: {
     flexDirection: "row",
-    gap: 12,
+    flexWrap: "wrap",
+    gap: 10,
   },
-
-  timeBox: {
-    width: 70,
-    height: 40,
+  timeCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    minWidth: 100,
     alignItems: "center",
-    justifyContent: "center",
   },
-
-  timeSelected: {
-    backgroundColor: "#5DA7DB33",
+  timeCardSelected: {
     borderColor: "#5DA7DB",
     borderWidth: 2,
+    backgroundColor: "#F0F8FF",
   },
-
   timeText: {
-    color: "#36424A",
-    fontSize: 17,
+    fontSize: 14,
+    color: "#162B40",
+    fontWeight: "500",
   },
-
   timeTextSelected: {
     color: "#5DA7DB",
-    fontWeight: "700",
-    fontSize: 17,
+    fontWeight: "600",
   },
-
-  radioBox: {
-    flexDirection: "row",
+  emptyContainer: {
+    paddingVertical: 30,
     alignItems: "center",
-    padding: 16,
-    backgroundColor: "#FFFFFF",
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#6B7B8C",
+    textAlign: "center",
+    marginBottom: 8,
+    fontWeight: "500",
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: "#9CA3AF",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  reservationButton: {
+    backgroundColor: "#5DA7DB",
     borderRadius: 12,
-    marginTop: 10,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-
-  radioBoxSelected: {
-    backgroundColor: "#5DA7DB33",
-    borderColor: "#5DA7DB",
-  },
-
-  radioOuter: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: "#DCE2E9",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-
-  radioOuterSelected: {
-    borderColor: "#5DA7DB",
-    backgroundColor: "#5DA7DB",
-  },
-
-  radioLabel: {
-    fontSize: 17,
-    color: "#162B40",
-  },
-
-  submitBtn: {
-    marginTop: 30,
-    backgroundColor: "#5DA7DB",
     paddingVertical: 16,
-    borderRadius: 12,
     alignItems: "center",
+    marginTop: 20,
   },
-
-  submitDisabled: {
-    backgroundColor: "#C9DCEC",
-  },
-
-  submitText: {
-    color: "#FFF",
+  reservationButtonText: {
+    color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "700",
   },
 });
+

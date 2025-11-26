@@ -134,3 +134,11 @@ export const refreshToken = (requestToken) => {
 export const verifyUserPhone = (payload) => {
   return apiClient.post("/auth/verify-phone", payload);
 };
+
+export const getInstitutionMe = () => {
+  return apiClient.get("/auth/institution/me");
+};
+
+export const linkOAuth2Local = (payload) => {
+  return apiClient.post("/auth/oauth2/link-local", payload);
+};

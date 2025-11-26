@@ -160,7 +160,7 @@ export default function Search() {
 
     router.push({
       pathname: "/screen/InstitutionResult",
-      params: { keyword },
+      params: { keyword, name: keyword },
     });
   };
 
@@ -380,21 +380,62 @@ export default function Search() {
           <TouchableOpacity
             style={styles.applyButton}
             onPress={() => {
-              const params = {
-                keyword: searchText || "",
-                selectedType: selectedType || "",
-                selectedLocation: selectedLocation || "",
-                selectedSido: selectedSido || "",
-                selectedGugun: selectedGugun || "",
-                selectedDong: selectedDong || "",
-                nearbyDistance,
-                price,
-                isAvailable,
-              };
+              // 필터 조건을 API 파라미터로 변환
+              const apiParams = {};
+
+              // 검색어
+              if (searchText) {
+                apiParams.keyword = searchText;
+                apiParams.name = searchText;
+              }
+
+              // 기관 유형 매핑
+              if (selectedType) {
+                if (selectedType === "데이케어센터") {
+                  apiParams.institutionType = "DAY_CARE_CENTER";
+                } else if (selectedType === "요양원") {
+                  apiParams.institutionType = "NURSING_HOME";
+                } else if (selectedType === "재가 돌봄 서비스") {
+                  apiParams.institutionType = "HOME_CARE_SERVICE";
+                }
+              }
+
+              // 지역 검색 - 시/도 선택 시
+              if (selectedLocation === "region" && selectedSido) {
+                apiParams.city = selectedSido;
+              }
+
+              // 거리 기반 검색
+              if (selectedLocation === "nearby" && nearbyDistance > 0) {
+                apiParams.radiusKm = nearbyDistance;
+                // TODO: 실제 위치 정보 가져오기
+                // apiParams.latitude = userLatitude;
+                // apiParams.longitude = userLongitude;
+              }
+
+              // 가격 (만원 단위를 원 단위로 변환)
+              if (price > 0) {
+                apiParams.maxMonthlyFee = price * 10000;
+              }
+
+              // 입소 가능 여부
+              if (isAvailable) {
+                apiParams.isAdmissionAvailable = true;
+              }
+
+              // 기존 파라미터 유지 (호환성)
+              apiParams.selectedType = selectedType || "";
+              apiParams.selectedLocation = selectedLocation || "";
+              apiParams.selectedSido = selectedSido || "";
+              apiParams.selectedGugun = selectedGugun || "";
+              apiParams.selectedDong = selectedDong || "";
+              apiParams.nearbyDistance = nearbyDistance;
+              apiParams.price = price;
+              apiParams.isAvailable = isAvailable;
 
               router.push({
                 pathname: "/screen/InstitutionResult",
-                params,
+                params: apiParams,
               });
             }}
           >

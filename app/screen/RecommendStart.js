@@ -4,6 +4,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
+import { getMyElderlyProfiles } from "../api/elderly/elderly.api";
+import { getRecommendations } from "../api/recommendation/recommendation.api";
+
 export default function RecommendStart() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -17,12 +20,57 @@ export default function RecommendStart() {
   const circumference = 2 * Math.PI * radius;
 
   useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        const elderlyResponse = await getMyElderlyProfiles();
+        const elderlyData = elderlyResponse.data.data || elderlyResponse.data;
+        const profiles = elderlyData.profiles || [];
+
+        if (profiles.length === 0) {
+          router.push({
+            pathname: "/screen/RecommendClear",
+            params: {
+              institutions: JSON.stringify([]),
+              tagIds: JSON.stringify([]),
+            },
+          });
+          return;
+        }
+
+        const firstProfile = profiles[0];
+        const recommendationResponse = await getRecommendations({
+          elderlyProfileId: firstProfile.id,
+          additionalText: "",
+        });
+
+        const recommendationData = recommendationResponse.data.data || recommendationResponse.data;
+        const institutions = recommendationData.institutions || [];
+
+        router.push({
+          pathname: "/screen/RecommendClear",
+          params: {
+            institutions: JSON.stringify(institutions),
+            tagIds: JSON.stringify([]),
+          },
+        });
+      } catch (error) {
+        console.log("Recommendation error:", error);
+        router.push({
+          pathname: "/screen/RecommendClear",
+          params: {
+            institutions: JSON.stringify([]),
+            tagIds: JSON.stringify([]),
+          },
+        });
+      }
+    };
+
     Animated.timing(progress, {
-      toValue: 1,       
-      duration: 3000,    
+      toValue: 1,
+      duration: 3000,
       useNativeDriver: true,
     }).start(() => {
-      router.push("/screen/RecommendClear");
+      fetchRecommendations();
     });
   }, []);
 

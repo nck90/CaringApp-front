@@ -20,11 +20,11 @@ export const createCounsel = (institutionId, payload) => {
 
 // --------------------------------------------------
 // 3. 상담 예약 가능 시간 조회
-//    GET /institutions/{institutionId}/counsels/{counselId}/time-slots?date=
+//    GET /institutions/{institutionId}/counsels/{counselId}?date=
 // --------------------------------------------------
 export const getCounselAvailableTimes = (institutionId, counselId, date) => {
   return apiClient.get(
-    `/institutions/${institutionId}/counsels/${counselId}/time-slots`,
+    `/institutions/${institutionId}/counsels/${counselId}`,
     {
       params: { date }, // yyyy-MM-dd
     }
@@ -41,13 +41,8 @@ export const deleteCounsel = (institutionId, counselId) => {
   );
 };
 
-// --------------------------------------------------
-// 5. 상담 서비스 정보 수정
-//    PUT /institutions/{institutionId}/counsels/{counselId}
-// --------------------------------------------------
 export const updateCounsel = (institutionId, counselId, payload) => {
-  // payload = { title, description }
-  return apiClient.put(
+  return apiClient.patch(
     `/institutions/${institutionId}/counsels/${counselId}`,
     payload
   );

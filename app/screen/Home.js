@@ -1,7 +1,8 @@
 import { useAssets } from "expo-asset";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   Image,
   StyleSheet,
@@ -11,11 +12,17 @@ import {
 } from "react-native";
 
 import BottomTabBar from "../../components/BottomTabBar";
+import { getActiveAdvertisementsByType } from "../api/advertisement/public.api";
+import { getMyMemberDetail } from "../api/member/member.api";
 
 const { width } = Dimensions.get("window");
 
 export default function Home() {
   const router = useRouter();
+  const [seniorName, setSeniorName] = useState("님");
+  const [guardianName, setGuardianName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [bannerAd, setBannerAd] = useState(null);
 
   const [loaded] = useAssets([
     require("../../assets/images/logo.png"),
@@ -25,10 +32,56 @@ export default function Home() {
     require("../../assets/images/use.png"),
   ]);
 
-  if (!loaded) return null;
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const response = await getMyMemberDetail();
+        const data = response.data.data || response.data;
 
-  const seniorName = "OOO";
-  const guardianName = "OOO";
+        // 보호자 이름 설정
+        if (data.member?.name) {
+          setGuardianName(data.member.name);
+        }
+
+        // 첫 번째 어르신 이름 설정
+        if (data.elderlyProfiles && data.elderlyProfiles.length > 0) {
+          setSeniorName(data.elderlyProfiles[0].name);
+        } else {
+          setSeniorName("님");
+        }
+      } catch (error) {
+        console.log("Fetch user info error:", error);
+        // 에러 발생 시 기본값 유지
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchBannerAd = async () => {
+      try {
+        const response = await getActiveAdvertisementsByType("MAIN_BANNER");
+        const data = response.data.data || response.data;
+        // 첫 번째 배너 광고 사용
+        if (Array.isArray(data) && data.length > 0) {
+          setBannerAd(data[0]);
+        }
+      } catch (error) {
+        console.log("Fetch banner ad error:", error);
+        // 에러 발생 시 배너 없음
+      }
+    };
+
+    fetchUserInfo();
+    fetchBannerAd();
+  }, []);
+
+  if (!loaded || loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color="#5DA7DB" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -51,13 +104,34 @@ export default function Home() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.bannerBox} />
+      {bannerAd ? (
+        <TouchableOpacity
+          style={styles.bannerBox}
+          onPress={() => {
+            if (bannerAd.institutionId) {
+              router.push({
+                pathname: "/screen/Institution",
+                params: { institutionId: bannerAd.institutionId },
+              });
+            }
+          }}
+        >
+          <Image
+            source={{ uri: bannerAd.bannerImageUrl }}
+            style={styles.bannerImage}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.bannerBox} />
+      )}
 
       <View style={styles.fixedContent}>
         <View style={styles.greetingBox}>
           <Text style={styles.greeting1}>안녕하세요!</Text>
           <Text style={styles.greeting2}>
-            {seniorName}님 보호자 {guardianName}님!
+            {seniorName !== "님" ? `${seniorName}님 보호자 ` : ""}
+            {guardianName ? `${guardianName}님!` : "님!"}
           </Text>
         </View>
 
@@ -136,6 +210,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignSelf: "center",
     marginBottom: 17,
+    overflow: "hidden",
+  },
+  bannerImage: {
+    width: "100%",
+    height: "100%",
   },
 
   fixedContent: {

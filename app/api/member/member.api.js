@@ -86,10 +86,17 @@ export const getMyStatistics = () => {
 };
 
 // --------------------------------------------------
-// 12. 내 선호 태그 설정 (POST /api/v1/members/me/preference-tags)
+// 12. 내 선호 태그 설정 (PUT /api/v1/members/me/preference-tags)
 // --------------------------------------------------
 export const setPreferenceTags = (tagIds) => {
-  return apiClient.post("/members/me/preference-tags", {
+  return apiClient.put("/members/me/preference-tags", {
     tagIds,
   });
+};
+
+// --------------------------------------------------
+// 13. 내 선호 태그 조회 (GET /api/v1/members/me/preference-tags)
+// --------------------------------------------------
+export const getPreferenceTags = () => {
+  return apiClient.get("/members/me/preference-tags");
 };

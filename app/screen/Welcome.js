@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 
-import { registerUser } from "../api/auth/auth.api"; // 🔥 회원가입 API 추가
+import { createElderlyProfile } from "../api/elderly/elderly.api";
 import { useSignup } from "../context/SignupContext";
 
 export default function Welcome() {
@@ -28,33 +28,93 @@ export default function Welcome() {
     }).start();
   }, []);
 
-  // ⭐ 회원가입 실제 요청 함수
-  const handleRegister = async () => {
+  const convertGender = (gender) => {
+    if (gender === "남성") return "MALE";
+    if (gender === "여성") return "FEMALE";
+    return "NOT_KNOWN";
+  };
+
+  const convertBloodType = (blood) => {
+    if (blood === "A형") return "A";
+    if (blood === "B형") return "B";
+    if (blood === "O형") return "O";
+    if (blood === "AB형") return "AB";
+    return "UNKNOWN";
+  };
+
+  const convertActivityLevel = (activity) => {
+    if (activity === "높음") return "HIGH";
+    if (activity === "보통") return "MEDIUM";
+    if (activity === "낮음" || activity === "와상") return "LOW";
+    return "MEDIUM";
+  };
+
+  const convertCognitiveLevel = (cognitive) => {
+    if (cognitive === "정상") return "NORMAL";
+    if (cognitive === "경도 인지 장애" || cognitive === "경증 치매") return "MODERATE";
+    if (cognitive === "중등도 치매" || cognitive === "중증 치매") return "SEVERE";
+    return "NORMAL";
+  };
+
+  const convertLongTermCareGrade = (grade) => {
+    if (grade === "없음") return "NONE";
+    if (grade === "1등급") return "GRADE_1";
+    if (grade === "2등급") return "GRADE_2";
+    if (grade === "3등급") return "GRADE_3";
+    if (grade === "4등급") return "GRADE_4";
+    if (grade === "5등급") return "GRADE_5";
+    if (grade === "인지등급") return "GRADE_1";
+    return "NONE";
+  };
+
+  const parseAddress = (addressStr) => {
+    if (!addressStr) {
+      return { zipCode: "00000", city: "", street: "" };
+    }
+
+    const parts = addressStr.split(" ");
+    const city = parts[0] || "";
+    const street = parts.slice(1).join(" ") || "";
+
+    return {
+      zipCode: "00000",
+      city,
+      street,
+    };
+  };
+
+  const handleCreateElderlyProfile = async () => {
     try {
+      const seniorInfo = signup?.senior || signup?.senior_info;
+      const seniorHealth = signup?.senior_health;
+
+      if (!seniorInfo || !seniorHealth) {
+        console.log("Senior info or health info missing");
+        return true;
+      }
+
+      const address = parseAddress(seniorInfo.address);
+
       const payload = {
-        username: signup?.username,
-        email: signup?.email,
-        password: signup?.password,
-
-        guardian_gender: signup?.guardian_gender,
-        guardian_address: signup?.guardian_address,
-
-        preferred_institutions: signup?.preferred_institutions,
-
-        senior: signup?.senior,              // name, phone, birth_date...
-        senior_health: signup?.senior_health // blood, grade, activity...
+        name: seniorInfo.name,
+        gender: convertGender(seniorInfo.gender),
+        birthDate: seniorInfo.birth_date || seniorInfo.birth,
+        bloodType: convertBloodType(seniorHealth.blood),
+        phoneNumber: seniorInfo.phone?.replace(/-/g, "") || "",
+        activityLevel: convertActivityLevel(seniorHealth.activity),
+        cognitiveLevel: convertCognitiveLevel(seniorHealth.cognitive),
+        longTermCareGrade: convertLongTermCareGrade(seniorHealth.grade),
+        notes: "",
+        address: address,
       };
 
-      // 🔥 실제 회원가입 API 호출
-      const response = await registerUser(payload);
-
-      console.log("REGISTER SUCCESS:", response.data);
+      const response = await createElderlyProfile(payload);
+      console.log("Elderly profile created:", response.data);
 
       return true;
     } catch (error) {
-      console.log("REGISTER ERROR:", error);
-      Alert.alert("회원가입 실패", "다시 시도해주세요.");
-      return false;
+      console.log("Create elderly profile error:", error);
+      return true;
     }
   };
 
@@ -76,8 +136,8 @@ export default function Welcome() {
         useNativeDriver: true,
       }),
     ]).start(async () => {
-      const ok = await handleRegister();
-      if (ok) router.push("/screen/Home");
+      await handleCreateElderlyProfile();
+      router.push("/screen/Home");
     });
   };
 
